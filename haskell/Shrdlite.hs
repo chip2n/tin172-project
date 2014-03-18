@@ -38,15 +38,16 @@ jsonMain jsinput = makeObj result
 
       plan      = solve world holding objects (head goals) :: Plan
 
-      output    = if null trees then "Parse error!"
-                  else if null goals then "Interpretation error!"
-                       else if length goals >= 2 then "Ambiguity error!"
-                            else if null plan then "Planning error!"
-                                 else "Much wow!"
+      output
+        | null trees = "Parse error!"
+        | null goals = "Interpretation error!"
+        | length goals >= 2 = "Ambiguity error!"
+        | null plan = "Planning error!"
+        | otherwise = "Much wow!"
 
       result    = [("utterance", showJSON utterance),
                    ("trees",     showJSON (map show trees)),
-                   ("goals",     if length trees >= 1 then showJSON goals else JSNull),
+                   ("goals",     if not (null trees) then showJSON goals else JSNull),
                    ("plan",      if length goals == 1 then showJSON plan  else JSNull),
                    ("output",    showJSON output)
                   ]
