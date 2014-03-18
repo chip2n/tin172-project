@@ -1,0 +1,10 @@
+# Cabal sandbox
+dist/
+cabal.sandbox.config
+.cabal-sandbox
+
+# Vim files
+*.swp
+*.swo
+*~
+
