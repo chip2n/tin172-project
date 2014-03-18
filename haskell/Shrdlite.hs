@@ -42,7 +42,7 @@ jsonMain jsinput = makeObj result
                   else if null goals then "Interpretation error!"
                        else if length goals >= 2 then "Ambiguity error!"
                             else if null plan then "Planning error!"
-                                 else "Success!"
+                                 else "Much wow!"
 
       result    = [("utterance", showJSON utterance),
                    ("trees",     showJSON (map show trees)),
@@ -57,7 +57,7 @@ interpret world holding objects tree = [True]
 
 
 solve :: World -> Id -> Objects -> Goal -> Plan
-solve world holding objects goal = ["I totally picked it up . . .", "pick " ++ show col, ". . . and I dropped it down. Much wow", "drop " ++ show col]
+solve world holding objects goal = ["I totally picked it up . . .", "pick " ++ show col, ". . . and I dropped it down.", "drop " ++ show col]
     where
       Just col = findIndex (not . null) world
 
