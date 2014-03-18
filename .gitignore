@@ -3,4 +3,7 @@
 *.hi
 *.o
 *.pyc
+*~
+*.swp
+*.swo
 __pycache__
