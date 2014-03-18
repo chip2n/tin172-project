@@ -57,7 +57,7 @@ interpret world holding objects tree = [True]
 
 
 solve :: World -> Id -> Objects -> Goal -> Plan
-solve world holding objects goal = ["I picked it up . . .", "pick " ++ show col, ". . . and I dropped it down", "drop " ++ show col]
+solve world holding objects goal = ["I totally picked it up . . .", "pick " ++ show col, ". . . and I dropped it down. Much wow", "drop " ++ show col]
     where
       Just col = findIndex (not . null) world
 

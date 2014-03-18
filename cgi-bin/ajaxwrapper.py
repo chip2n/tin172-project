@@ -15,12 +15,13 @@ from subprocess import Popen, PIPE, STDOUT
 # SCRIPT = ['/usr/local/bin/swipl', '-q', '-g', 'main,halt', '-t', 'halt(1)', '-s', 'shrdlite.pl']
 
 # # Haskell
-# SCRIPTDIR = 'haskell'
-# SCRIPT = ['/usr/bin/runhaskell', 'Shrdlite.hs']
+SCRIPTDIR = 'haskell'
+#SCRIPT = ['/usr/bin/runhaskell', 'Shrdlite.hs']
+SCRIPT = ['./dist/build/shrdlite/shrdlite']
 
 # Python
-SCRIPTDIR = 'python'
-SCRIPT = ['/usr/bin/python', 'shrdlite.py']
+#SCRIPTDIR = 'python'
+#SCRIPT = ['/usr/bin/python', 'shrdlite.py']
 
 while not os.path.isdir(SCRIPTDIR):
     SCRIPTDIR = os.path.join("..", SCRIPTDIR)
