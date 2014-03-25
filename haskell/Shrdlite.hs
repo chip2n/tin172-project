@@ -17,6 +17,8 @@ type Id = String
 type World = [[Id]]
 type Objects = JSObject JSValue
 type Goal = Bool
+type Goal2 = [(Relation, GoalObject, GoalObject)]
+data GoalObject = Floor Int | Object Id
 type Plan = [String]
 
 
@@ -49,19 +51,32 @@ jsonMain jsinput = makeObj result
                    ("trees",     showJSON (map show trees)),
                    ("goals",     if not (null trees) then showJSON goals else JSNull),
                    ("plan",      if length goals == 1 then showJSON plan  else JSNull),
-                   ("output",    showJSON output)
+                   ("output",    showJSON output),
+                   ("receivedJSON", showJSON $ jsinput)
                   ]
 
 
+-- | Converts a parse tree into a PDDL representation of the final
+-- goal of the command
 interpret :: World -> Id -> Objects -> Command -> [Goal]
 interpret world holding objects tree = [True]
 
-
+-- | Creates a list of moves which together creates a "Plan". The plan can
+-- consist of messages to the user and commands in the form of
+-- "pick FLOOR_SPACE" and "drop FLOOR_SPACE"
 solve :: World -> Id -> Objects -> Goal -> Plan
 solve world holding objects goal = ["I totally picked it up . . .", "pick " ++ show col, ". . . and I dropped it down.", "drop " ++ show col]
     where
       Just col = findIndex (not . null) world
 
+
+-- | Checks if the goal is fulfilled in the world state
+check :: World -> Goal -> Bool
+check = undefined
+
+-- | Checks which plans is the best one, according to some heuristic
+bestPlan :: [Plan] -> Plan
+bestPlan = undefined
 
 ok :: Result a -> a
 ok (Ok res) = res
