@@ -1,2 +1,2 @@
 #!/bin/bash
-python -m CGIHTTPServer 8000
+python2 -m CGIHTTPServer 8000
