@@ -11,11 +11,13 @@ import ShrdliteGrammar
 import CombinatorParser
 import Text.JSON
 import Data.List (findIndex)
+import qualified Data.Map as M
 
 type Utterance = [String]
 type Id = String
 type World = [[Id]]
-type Objects = JSObject JSValue
+--type Objects = JSObject JSValue
+type Objects = M.Map Id Object
 type Goal = [(Relation, GoalObject, GoalObject)]
 data GoalObject = Flr Int | Obj Id deriving (Show)
 type Plan = [String]
@@ -31,7 +33,7 @@ jsonMain jsinput = makeObj result
       utterance = ok (valFromObj "utterance" jsinput) :: Utterance
       world     = ok (valFromObj "world"     jsinput) :: World
       holding   = ok (valFromObj "holding"   jsinput) :: Id
-      objects   = ok (valFromObj "objects"   jsinput) :: Objects
+      objects   = parseObjects $ ok (valFromObj "objects"   jsinput) :: Objects
 
       trees     = parse command utterance :: [Command]
 
@@ -53,6 +55,11 @@ jsonMain jsinput = makeObj result
                    ("output",    showJSON output),
                    ("receivedJSON", showJSON $ jsinput)
                   ]
+
+
+parseObjects :: JSObject JSValue -> Objects
+parseObjects = undefined
+
 
 showGoals :: [Goal] -> [String]
 showGoals goals = map show goals
