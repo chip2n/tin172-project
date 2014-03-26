@@ -26,13 +26,42 @@ data Relation = Beside | Leftof | Rightof | Above | Ontop | Under | Inside
                 deriving (Eq, Ord, Show)
 
 data Size = AnySize | Small | Large 
-            deriving (Eq, Ord, Show)
+            deriving (Ord, Show)
+
+instance Eq Size where
+    AnySize == _       = True
+    _       == AnySize = True
+    Small   == Small   = True
+    Large   == Large   = True
+    _       == _       = False
 
 data Color = AnyColor | Black | White | Blue | Green | Yellow | Red
-             deriving (Eq, Ord, Show)
+             deriving (Ord, Show)
+
+instance Eq Color where
+    AnyColor == _        = True
+    _        == AnyColor = True
+    Black    == Black    = True
+    White    == White    = True
+    Blue     == Blue     = True
+    Green    == Green    = True
+    Yellow   == Yellow   = True
+    Red      == Red      = True
+    _        == _        = False
 
 data Form = AnyForm | Brick | Plank | Ball | Pyramid | Box | Table
-            deriving (Eq, Ord, Show)
+            deriving (Ord, Show)
+
+instance Eq Form where
+    AnyForm == _       = True
+    _       == AnyForm = True
+    Brick   == Brick   = True
+    Plank   == Plank   = True
+    Ball    == Ball    = True
+    Pyramid == Pyramid = True
+    Box     == Box     = True
+    Table   == Table   = True
+    _       == _       = False
 
 -- Grammar rules
 

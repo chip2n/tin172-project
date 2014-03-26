@@ -18,7 +18,9 @@ type Id = String
 type World = [[Id]]
 --type Objects = JSObject JSValue
 type Objects = M.Map Id Object
-type Goal = [(Relation, GoalObject, GoalObject)]
+data Goal = TakeGoal GoalObject
+          | PutGoal Relation GoalObject GoalObject
+          deriving (Show)
 data GoalObject = Flr Int | Obj Id deriving (Show)
 type Plan = [String]
 
@@ -67,7 +69,40 @@ showGoals goals = map show goals
 -- | Converts a parse tree into a PDDL representation of the final
 -- goal of the command
 interpret :: World -> Id -> Objects -> Command -> [Goal]
-interpret world holding objects tree = [[(Ontop, Obj "a", Flr 0)]]
+--interpret world holding objects tree = [[(Ontop, Obj "a", Flr 0)]]
+interpret world holding objects (Take entity) =
+    case entity of
+        Floor                    -> error "Cannot take floor, ye rascal!"
+        BasicEntity q obj        -> 
+            let found = matchingObjects q obj Nothing
+            in  map (\(i,o) -> TakeGoal (Obj i)) found
+        RelativeEntity q obj loc -> 
+            let found = matchingObjects q obj (Just loc)
+            in  map (\(i,o) -> TakeGoal (Obj i)) found
+  where matchingObjects q obj l = searchObjects world holding objects obj q l
+interpret world holding objects goal = undefined
+
+
+-- | Searches the objects map after objects matching the quantifier and location
+searchObjects :: World -> Id -> Objects -> Object -> Quantifier -> Maybe Location -> [(Id, Object)]
+searchObjects world holding objects obj quantifier loc =
+    case loc of
+        Nothing ->
+            case quantifier of
+                All -> foundObjects
+                Any -> take 1 foundObjects
+                The -> take 1 foundObjects --TODO: Assert only one element
+        Just location -> 
+            case quantifier of
+                All -> undefined
+                Any -> undefined
+                The -> undefined
+  where 
+        ids = holding : concat world
+        exists (id,_)     = id `elem` ids
+        isMatching (_, o) = obj == o
+        foundObjects = filter exists . filter isMatching $ M.assocs objects
+
 
 -- | Creates a list of moves which together creates a "Plan". The plan can
 -- consist of messages to the user and commands in the form of
