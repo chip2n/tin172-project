@@ -16,9 +16,8 @@ type Utterance = [String]
 type Id = String
 type World = [[Id]]
 type Objects = JSObject JSValue
-type Goal = Bool
-type Goal2 = [(Relation, GoalObject, GoalObject)]
-data GoalObject = Floor Int | Object Id
+type Goal = [(Relation, GoalObject, GoalObject)]
+data GoalObject = Flr Int | Obj Id deriving (Show)
 type Plan = [String]
 
 
@@ -49,17 +48,19 @@ jsonMain jsinput = makeObj result
 
       result    = [("utterance", showJSON utterance),
                    ("trees",     showJSON (map show trees)),
-                   ("goals",     if not (null trees) then showJSON goals else JSNull),
+                   ("goals",     if not (null trees) then showJSON (showGoals goals) else JSNull),
                    ("plan",      if length goals == 1 then showJSON plan  else JSNull),
                    ("output",    showJSON output),
                    ("receivedJSON", showJSON $ jsinput)
                   ]
 
+showGoals :: [Goal] -> [String]
+showGoals goals = map show goals
 
 -- | Converts a parse tree into a PDDL representation of the final
 -- goal of the command
 interpret :: World -> Id -> Objects -> Command -> [Goal]
-interpret world holding objects tree = [True]
+interpret world holding objects tree = [[(Ontop, Obj "a", Flr 0)]]
 
 -- | Creates a list of moves which together creates a "Plan". The plan can
 -- consist of messages to the user and commands in the form of
