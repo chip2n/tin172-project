@@ -69,10 +69,9 @@ showGoals goals = map show goals
 -- | Converts a parse tree into a PDDL representation of the final
 -- goal of the command
 interpret :: World -> Id -> Objects -> Command -> [Goal]
---interpret world holding objects tree = [[(Ontop, Obj "a", Flr 0)]]
 interpret world holding objects (Take entity) =
     case entity of
-        Floor                    -> error "Cannot take floor, ye rascal!"
+        Floor                    -> []
         BasicEntity q obj        -> 
             let found = matchingObjects q obj Nothing
             in  map (\(i,o) -> TakeGoal (Obj i)) found
