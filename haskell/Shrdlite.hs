@@ -60,8 +60,23 @@ jsonMain jsinput = makeObj result
 
 
 parseObjects :: JSObject JSValue -> Objects
-parseObjects = undefined
+parseObjects obj = M.fromList $ map parseValue $ fromJSObject obj
 
+parseValue :: (Id, JSValue) -> (Id, Object)
+parseValue (s, JSObject val) = (s, obj)
+ where
+    objForm = head $ parse form' $ [ok (valFromObj "form" val) :: String]
+    objSize = head $ parse size $ [ok (valFromObj "size" val) :: String]
+    objColor = head $ parse color $ [ok (valFromObj "color" val) :: String]
+    obj = Object objSize objColor objForm
+
+form' :: SParser Form
+form' = lexicon [(Brick,   ["brick"]),
+                 (Plank,   ["plank"]),
+                 (Ball,    ["ball"]),
+                 (Pyramid, ["pyramid"]),
+                 (Box,     ["box"]),
+                 (Table,   ["table"])]
 
 showGoals :: [Goal] -> [String]
 showGoals goals = map show goals
