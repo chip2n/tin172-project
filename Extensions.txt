@@ -1,0 +1,3 @@
+Proposed extensions to the AI
+
+- Ability to ask control questions
