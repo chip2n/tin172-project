@@ -38,25 +38,28 @@ jsonMain jsinput = makeObj result
       objects   = parseObjects $ ok (valFromObj "objects"   jsinput) :: Objects
 
       trees     = parse command utterance :: [Command]
-
-      goals     = [goal | tree <- trees, goal <- interpret world holding objects tree] :: [Goal]
-
+      goals     = concat . map (interpret world holding objects) $ trees
       plan      = solve world holding objects (head goals) :: Plan
 
       output
-        | null trees = "Parse error!"
-        | null goals = "Interpretation error!"
+        | null trees        = "Parse error!"
+        | null goals        = "Interpretation error!"
         | length goals >= 2 = "Ambiguity error!"
-        | null plan = "Planning error!"
-        | otherwise = "Much wow!"
+        | null plan         = "Planning error!"
+        | otherwise         = "Much wow!"
 
-      result    = [("utterance", showJSON utterance),
-                   ("trees",     showJSON (map show trees)),
-                   ("goals",     if not (null trees) then showJSON (showGoals goals) else JSNull),
-                   ("plan",      if length goals == 1 then showJSON plan  else JSNull),
-                   ("output",    showJSON output),
-                   ("receivedJSON", showJSON $ jsinput)
-                  ]
+      result = [("utterance",
+                   showJSON utterance),
+                ("trees",     showJSON (map show trees)),
+                ("goals",     if not (null trees)
+                                then showJSON (showGoals goals)
+                                else JSNull),
+                ("plan",      if length goals == 1
+                                then showJSON plan
+                                else JSNull),
+                ("output",    showJSON output),
+                ("receivedJSON", showJSON $ jsinput)
+               ]
 
 
 parseObjects :: JSObject JSValue -> Objects
@@ -98,7 +101,8 @@ interpret world holding objects goal = undefined
 
 
 -- | Searches the objects map after objects matching the quantifier and location
-searchObjects :: World -> Id -> Objects -> Object -> Quantifier -> Maybe Location -> [(Id, Object)]
+searchObjects :: World -> Id -> Objects ->
+                 Object -> Quantifier -> Maybe Location -> [(Id, Object)]
 searchObjects world holding objects obj quantifier loc =
     case loc of
         Nothing ->
@@ -122,7 +126,11 @@ searchObjects world holding objects obj quantifier loc =
 -- consist of messages to the user and commands in the form of
 -- "pick FLOOR_SPACE" and "drop FLOOR_SPACE"
 solve :: World -> Id -> Objects -> Goal -> Plan
-solve world holding objects goal = ["I totally picked it up . . .", "pick " ++ show col, ". . . and I dropped it down.", "drop " ++ show col]
+solve world holding objects goal =
+    [ "I totally picked it up . . ."
+    , "pick " ++ show col
+    , ". . . and I dropped it down."
+    , "drop " ++ show col ]
     where
       Just col = findIndex (not . null) world
 

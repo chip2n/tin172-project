@@ -1,3 +1,6 @@
 Proposed extensions to the AI
 
 - Ability to ask control questions
+- Find best (shortest) solution
+- Qualifiers: any, a, the, all
+- Adding "not" modifier (Pick up any ball NOT beside a table)
