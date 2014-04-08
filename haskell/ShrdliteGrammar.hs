@@ -1,4 +1,3 @@
-
 module ShrdliteGrammar where
 
 import CombinatorParser
