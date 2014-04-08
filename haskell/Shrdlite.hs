@@ -10,7 +10,7 @@ module Main where
 import ShrdliteGrammar
 import CombinatorParser
 import Text.JSON
-import Data.List (findIndex)
+import Data.List (findIndex, elemIndex)
 import qualified Data.Map as M
 
 type Utterance = [String]
@@ -34,7 +34,7 @@ jsonMain jsinput = makeObj result
     where 
       utterance = ok (valFromObj "utterance" jsinput) :: Utterance
       world     = ok (valFromObj "world"     jsinput) :: World
-      holding   = ok (valFromObj "holding"   jsinput) :: Id
+      holding   = maybeOk (valFromObj "holding"   jsinput) :: Maybe Id
       objects   = parseObjects $ ok (valFromObj "objects"   jsinput) :: Objects
 
       trees     = parse command utterance :: [Command]
@@ -45,7 +45,7 @@ jsonMain jsinput = makeObj result
 
       output
         | null trees = "Parse error!"
-        | null goals = "Interpretation error!"
+        | null goals = "Interpretation error, no goals!"
         | length goals >= 2 = "Ambiguity error!"
         | null plan = "Planning error!"
         | otherwise = "Much wow!"
@@ -83,23 +83,23 @@ showGoals goals = map show goals
 
 -- | Converts a parse tree into a PDDL representation of the final
 -- goal of the command
-interpret :: World -> Id -> Objects -> Command -> [Goal]
+interpret :: World -> Maybe Id -> Objects -> Command -> [Goal]
 --interpret world holding objects tree = [[(Ontop, Obj "a", Flr 0)]]
 interpret world holding objects (Take entity) =
     case entity of
         Floor                    -> error "Cannot take floor, ye rascal!"
-        BasicEntity q obj        -> 
+        BasicEntity q obj        ->
             let found = matchingObjects q obj Nothing
-            in  map (\(i,o) -> TakeGoal (Obj i)) found
+            in  map (\(i,_) -> TakeGoal (Obj i)) found
         RelativeEntity q obj loc -> 
             let found = matchingObjects q obj (Just loc)
-            in  map (\(i,o) -> TakeGoal (Obj i)) found
+            in  map (\(i,_) -> TakeGoal (Obj i)) found
   where matchingObjects q obj l = searchObjects world holding objects obj q l
 interpret world holding objects goal = undefined
 
 
 -- | Searches the objects map after objects matching the quantifier and location
-searchObjects :: World -> Id -> Objects -> Object -> Quantifier -> Maybe Location -> [(Id, Object)]
+searchObjects :: World -> Maybe Id -> Objects -> Object -> Quantifier -> Maybe Location -> [(Id, Object)]
 searchObjects world holding objects obj quantifier loc =
     case loc of
         Nothing ->
@@ -107,25 +107,37 @@ searchObjects world holding objects obj quantifier loc =
                 All -> foundObjects
                 Any -> take 1 foundObjects
                 The -> take 1 foundObjects --TODO: Assert only one element
-        Just location -> 
+        Just location ->
             case quantifier of
                 All -> undefined
                 Any -> undefined
                 The -> undefined
   where 
-        ids = holding : concat world
-        exists (id,_)     = id `elem` ids
+        ids = case holding of
+          Nothing   -> concat world
+          Just holdId  -> holdId : concat world
+        exists (i,_)     = i `elem` ids
         isMatching (_, o) = obj == o
         foundObjects = filter exists . filter isMatching $ M.assocs objects
 
+findObjPos :: Id -> World -> Maybe (Int,Int)
+findObjPos = findObjPos' 0
+
+findObjPos' :: Int -> Id -> World -> Maybe (Int,Int)
+findObjPos' _ _ [] = Nothing
+findObjPos' x i (ids:idss) = case elemIndex i ids of
+  Nothing -> findObjPos' (x+1) i idss
+  Just y  -> Just (x,y)
 
 -- | Creates a list of moves which together creates a "Plan". The plan can
 -- consist of messages to the user and commands in the form of
 -- "pick FLOOR_SPACE" and "drop FLOOR_SPACE"
-solve :: World -> Id -> Objects -> Goal -> Plan
+solve :: World -> Maybe Id -> Objects -> Goal -> Plan
 solve world holding objects goal = ["I totally picked it up . . .", "pick " ++ show col, ". . . and I dropped it down.", "drop " ++ show col]
     where
-      Just col = findIndex (not . null) world
+      Just col = case goal of
+        (TakeGoal (Obj i)) -> fmap fst $ findObjPos i world
+      -- Just col = findIndex (not . null) world
 
 
 -- | Checks if the goal is fulfilled in the world state
@@ -140,3 +152,6 @@ ok :: Result a -> a
 ok (Ok res) = res
 ok (Error err) = error err
 
+maybeOk :: Result a -> Maybe a
+maybeOk (Ok res) = Just res
+maybeOk (Error _) = Nothing
