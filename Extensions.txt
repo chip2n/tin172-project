@@ -1,9 +1,11 @@
 Proposed extensions to the AI
 
 - Ability to ask control questions
+- Ability to parse placement such as "second from the top"
 - Find best (shortest) solution
-- Qualifiers: any, a, the, all
+- Quantifiers: any, a, the, all
 - Adding "not" modifier (Pick up any ball NOT beside a table)
 - Utterance for flip (bottom-most object becomes top in a column).
 - Utterance for swap (swap any two objects, keeping all others in the same final position).
+- Swap columns.
 - Add/Remove objects?
