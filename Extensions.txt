@@ -6,3 +6,4 @@ Proposed extensions to the AI
 - Adding "not" modifier (Pick up any ball NOT beside a table)
 - Utterance for flip (bottom-most object becomes top in a column).
 - Utterance for swap (swap any two objects, keeping all others in the same final position).
+- Add/Remove objects?
