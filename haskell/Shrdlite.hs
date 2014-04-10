@@ -10,7 +10,9 @@ module Main where
 import ShrdliteGrammar
 import CombinatorParser
 import Text.JSON
-import Data.List (findIndex, elemIndex)
+import Data.List (elemIndex)
+import Data.Maybe
+import Control.Monad
 import qualified Data.Map as M
 
 type Utterance = [String]
@@ -23,6 +25,7 @@ data Goal = TakeGoal GoalObject
           deriving (Show)
 data GoalObject = Flr Int | Obj Id deriving (Show)
 type Plan = [String]
+data State = State { world :: World, holding :: Maybe Id, objects :: Objects }
 
 
 main :: IO ()
@@ -36,9 +39,10 @@ jsonMain jsinput = makeObj result
       world     = ok (valFromObj "world"     jsinput) :: World
       holding   = maybeOk (valFromObj "holding"   jsinput) :: Maybe Id
       objects   = parseObjects $ ok (valFromObj "objects"   jsinput) :: Objects
+      state     = State world holding objects
 
       trees     = parse command utterance :: [Command]
-      goals     = concat . map (interpret world holding objects) $ trees
+      goals     = concat . map (interpret state) $ trees
       plan      = solve world holding objects (head goals) :: Plan
 
       output
@@ -86,42 +90,92 @@ showGoals goals = map show goals
 
 -- | Converts a parse tree into a PDDL representation of the final
 -- goal of the command
-interpret :: World -> Maybe Id -> Objects -> Command -> [Goal]
-interpret world holding objects (Take entity) =
+interpret :: State -> Command -> [Goal]
+interpret state (Take entity) =
     case entity of
         Floor                    -> error "Cannot take floor, ye rascal!"
         BasicEntity q obj        ->
-            let found = matchingObjects q obj Nothing
-            in  map (\(i,_) -> TakeGoal (Obj i)) found
+            case matchingObjects q obj Nothing of
+                Right found -> map (\(i,_) -> TakeGoal (Obj i)) found
+                Left _     -> error "Ambiguity error - searchObjects returned Left."
         RelativeEntity q obj loc -> 
-            let found = matchingObjects q obj (Just loc)
-            in  map (\(i,_) -> TakeGoal (Obj i)) found
-  where matchingObjects q obj l = searchObjects world holding objects obj q l
-interpret world holding objects goal = undefined
+            case matchingObjects q obj (Just loc) of
+                Right found -> map (\(i,_) -> TakeGoal (Obj i)) found
+                Left _     -> error "Ambiguity error - searchObjects returned Left."
+  where matchingObjects q obj l = searchObjects state obj q l
+interpret state goal = undefined
 
 
--- | Searches the objects map after objects matching the quantifier and location
-searchObjects :: World -> Maybe Id -> Objects ->
-                 Object -> Quantifier -> Maybe Location -> [(Id, Object)]
-searchObjects world holding objects obj quantifier loc =
+-- | Searches the objects map after objects matching the quantifier and location.
+-- Returns Left at ambiguity error, and Right otherwise.
+searchObjects :: State ->
+                 Object -> Quantifier -> Maybe Location -> Either [[(Id, Object)]] [(Id, Object)]
+searchObjects state obj quantifier loc =
     case loc of
         Nothing ->
             case quantifier of
-                All -> foundObjects
-                Any -> take 1 foundObjects
-                The -> take 1 foundObjects --TODO: Assert only one element
+                All -> Right foundObjects
+                Any -> Right $ take 1 foundObjects
+                The -> case length foundObjects of
+                           1 -> Right $ take 1 foundObjects
+                           _ -> Left $ map (\a -> [a]) foundObjects
         Just location ->
             case quantifier of
-                All -> undefined
-                Any -> undefined
-                The -> undefined
+                All -> Right foundObjects
+                Any -> Right $ take 1 foundObjects
+                The -> let foundObjects' = filter (\(i, o) -> locationHolds state (i, o) location) foundObjects
+                       in case length foundObjects' of
+                              1 -> Right $ take 1 foundObjects'
+                              0 -> Right []
+                              _ -> Left $ map (\a -> [a]) foundObjects'
   where 
-        ids = case holding of
-          Nothing   -> concat world
-          Just holdId  -> holdId : concat world
+        ids = case holding state of
+          Nothing   -> concat $ world state
+          Just holdId  -> (holdId : (concat $ world state))
         exists (i,_)     = i `elem` ids
         isMatching (_, o) = obj == o
-        foundObjects = filter exists . filter isMatching $ M.assocs objects
+        foundObjects = filter exists . filter isMatching $ M.assocs (objects state)
+
+-- | Checks if a location holds for an object in the world.
+locationHolds :: State -> (Id, Object) -> Location -> Bool
+locationHolds state (id, obj) (Relative relation entity) =
+    case objPos of
+        Nothing -> error "Cannot validate location for non-existent objects"
+        Just (col, height) ->
+            case relation of
+                Beside  -> or . map (\eId -> leftof id eId || rightof id eId) $ entityIds
+                Leftof  -> or . map (\eId -> leftof id eId) $ entityIds
+                Rightof -> or . map (\eId -> rightof id eId) $ entityIds
+                Above   -> or . map (\eId -> sameColumn id eId && above id eId) $ entityIds
+                Ontop   -> or . map (\eId -> sameColumn id eId && ontop id eId) $ entityIds
+                Under   -> or . map (\eId -> sameColumn id eId && under id eId) $ entityIds
+                Inside  -> or . map (\eId -> sameColumn id eId && inside id eId) $ entityIds
+  where objPos = findObjPos id (world state)
+        entityIds = findEntity state entity
+        sameColumn i1 i2 = fromMaybe False $ liftM2 elem (return i2) (column state i1)
+        above i1 i2      = fromMaybe False $ liftM2 (>) (findObjPos i1 (world state)) (findObjPos i2 (world state))
+        under i1 i2      = fromMaybe False $ liftM2 (<) (findObjPos i1 (world state)) (findObjPos i2 (world state))
+        ontop i1 i2      = fromMaybe False $ liftM2 (\a b -> snd a - snd b == 1) (findObjPos i1 (world state)) (findObjPos i2 (world state))
+        inside i1 i2     = above i1 i2 && (form' $ (objects state) M.! i1) == Box
+        rightof i1 i2    = fromMaybe False $ liftM2 (\a b -> fst a - fst b == 1) (findObjPos i1 $ world state) (findObjPos i2 $ world state)
+        leftof i1 i2     = fromMaybe False $ liftM2 (\a b -> fst a - fst b == -1) (findObjPos i1 $ world state) (findObjPos i2 $ world state)
+        form' (Object _ _ f) = f
+
+        
+findEntity :: State -> Entity -> [Id]
+findEntity state entity =
+    case entity of
+        Floor -> []
+        BasicEntity q obj -> 
+            case searchObjects state obj q Nothing of
+                Left _ -> error "Ambiguity error."
+                Right objs -> map fst objs
+        RelativeEntity q obj loc -> undefined -- searchObjects world Nothing objects obj q loc
+
+-- | Returns the column index of the object id, if any.
+column :: State -> Id -> Maybe [Id]
+column state id = fmap (\pos -> world state !! fst pos) i
+  where i = findObjPos id (world state)
 
 findObjPos :: Id -> World -> Maybe (Int,Int)
 findObjPos = findObjPos' 0
