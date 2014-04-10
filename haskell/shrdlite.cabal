@@ -21,6 +21,16 @@ build-type:          Simple
 -- extra-source-files:  
 cabal-version:       >=1.10
 
+library
+  exposed-modules:     Shrdlite.Common, Shrdlite.Planner
+  -- other-modules:       
+  other-extensions:    GADTs
+  build-depends:       base ==4.*
+                     , containers
+                     , astar >=0.2.1
+  -- hs-source-dirs:      
+  default-language:    Haskell2010
+
 executable shrdlite
   main-is:             Shrdlite.hs
   -- other-modules:       
@@ -28,5 +38,13 @@ executable shrdlite
   build-depends:       base >=4.6 && <4.7
                      , json
                      , containers
+                     , astar >=0.2.1
   -- hs-source-dirs:      
   default-language:    Haskell2010
+
+Test-Suite test-shrdlite
+   type:            exitcode-stdio-1.0
+   hs-source-dirs:  test
+   main-is:         Test.hs
+   build-depends:   base, QuickCheck >= 2.0
+   default-language:    Haskell2010

@@ -5,7 +5,7 @@
 -- Test from the command line:
 -- runhaskell Shrdlite.hs < ../examples/medium.json
 
-module Main where 
+module Main where
 
 import ShrdliteGrammar
 import CombinatorParser
@@ -14,19 +14,12 @@ import Data.List (elemIndex)
 import Data.Maybe
 import Control.Monad
 import qualified Data.Map as M
+import qualified Data.Set as S
+import Data.Graph.AStar
 
-type Utterance = [String]
-type Id = String
-type World = [[Id]]
---type Objects = JSObject JSValue
-type Objects = M.Map Id Object
-data Goal = TakeGoal GoalObject
-          | PutGoal Relation GoalObject GoalObject
-          deriving (Show)
-data GoalObject = Flr Int | Obj Id deriving (Show)
-type Plan = [String]
-data State = State { world :: World, holding :: Maybe Id, objects :: Objects }
-
+-- Our own modules
+import Shrdlite.Planner as Planner
+import Shrdlite.Common as Common
 
 main :: IO ()
 main = getContents >>= putStrLn . encode . jsonMain . ok . decode
@@ -43,7 +36,7 @@ jsonMain jsinput = makeObj result
 
       trees     = parse command utterance :: [Command]
       goals     = concat . map (interpret state) $ trees
-      plan      = solve world holding objects (head goals) :: Plan
+      plan      = Planner.solve world holding objects (head goals) :: Plan
 
       output
         | null trees        = "Parse error!"
@@ -150,10 +143,10 @@ locationHolds state (id, obj) (Relative relation entity) =
                 Ontop   -> map (\eId -> sameColumn id eId && ontop id eId) $ entityIds
                 Under   -> map (\eId -> sameColumn id eId && under id eId) $ entityIds
                 Inside  -> map (\eId -> sameColumn id eId && inside id eId) $ entityIds
-  where objPos = findObjPos id (world state)
+  where objPos = Common.findObjPos id (world state)
         entityIds = findEntity state entity
-        findObjColumn i  = fmap fst . findObjPos i $ world state
-        findObjHeight i  = fmap snd . findObjPos i $ world state
+        findObjColumn i  = fmap fst . Common.findObjPos i $ world state
+        findObjHeight i  = fmap snd . Common.findObjPos i $ world state
         sameColumn i1 i2 = fromMaybe False $ liftM2 elem (return i2) (column state i1)
         above i1 i2      = fromMaybe False $ liftM2 (>) (findObjHeight i1) (findObjHeight i2)
         under i1 i2      = fromMaybe False $ liftM2 (<) (findObjHeight i1) (findObjHeight i2)
@@ -177,39 +170,7 @@ findEntity state entity =
 -- | Returns the column index of the object id, if any.
 column :: State -> Id -> Maybe [Id]
 column state id = fmap (\pos -> world state !! fst pos) i
-  where i = findObjPos id (world state)
-
-findObjPos :: Id -> World -> Maybe (Int,Int)
-findObjPos = findObjPos' 0
-
-findObjPos' :: Int -> Id -> World -> Maybe (Int,Int)
-findObjPos' _ _ [] = Nothing
-findObjPos' x i (ids:idss) = case elemIndex i ids of
-  Nothing -> findObjPos' (x+1) i idss
-  Just y  -> Just (x,y)
-
--- | Creates a list of moves which together creates a "Plan". The plan can
--- consist of messages to the user and commands in the form of
--- "pick FLOOR_SPACE" and "drop FLOOR_SPACE"
-solve :: World -> Maybe Id -> Objects -> Goal -> Plan
-solve world holding objects goal =
-    [ "I totally picked it up . . ."
-    , "pick " ++ show col
-    , ". . . and I dropped it down."
-    , "drop " ++ show col ]
-    where
-      Just col = case goal of
-        (TakeGoal (Obj i)) -> fmap fst $ findObjPos i world
-      -- Just col = findIndex (not . null) world
-
-
--- | Checks if the goal is fulfilled in the world state
-check :: World -> Goal -> Bool
-check = undefined
-
--- | Checks which plans is the best one, according to some heuristic
-bestPlan :: [Plan] -> Plan
-bestPlan = undefined
+  where i = Common.findObjPos id (world state)
 
 ok :: Result a -> a
 ok (Ok res) = res
