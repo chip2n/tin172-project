@@ -152,13 +152,15 @@ locationHolds state (id, obj) (Relative relation entity) =
                 Inside  -> or . map (\eId -> sameColumn id eId && inside id eId) $ entityIds
   where objPos = findObjPos id (world state)
         entityIds = findEntity state entity
+        findObjColumn i  = fmap fst . findObjPos i $ world state
+        findObjHeight i  = fmap snd . findObjPos i $ world state
         sameColumn i1 i2 = fromMaybe False $ liftM2 elem (return i2) (column state i1)
-        above i1 i2      = fromMaybe False $ liftM2 (>) (findObjPos i1 (world state)) (findObjPos i2 (world state))
-        under i1 i2      = fromMaybe False $ liftM2 (<) (findObjPos i1 (world state)) (findObjPos i2 (world state))
-        ontop i1 i2      = fromMaybe False $ liftM2 (\a b -> snd a - snd b == 1) (findObjPos i1 (world state)) (findObjPos i2 (world state))
+        above i1 i2      = fromMaybe False $ liftM2 (>) (findObjColumn i1) (findObjColumn i2)
+        under i1 i2      = fromMaybe False $ liftM2 (<) (findObjColumn i1) (findObjColumn i2)
+        ontop i1 i2      = fromMaybe False $ liftM2 (\a b -> a - b == 1) (findObjHeight i1) (findObjHeight i2)
         inside i1 i2     = above i1 i2 && (form' $ (objects state) M.! i1) == Box
-        rightof i1 i2    = fromMaybe False $ liftM2 (\a b -> fst a - fst b == 1) (findObjPos i1 $ world state) (findObjPos i2 $ world state)
-        leftof i1 i2     = fromMaybe False $ liftM2 (\a b -> fst a - fst b == -1) (findObjPos i1 $ world state) (findObjPos i2 $ world state)
+        rightof i1 i2    = fromMaybe False $ liftM2 (\a b -> a - b == 1) (findObjColumn i1) (findObjColumn i2)
+        leftof i1 i2     = fromMaybe False $ liftM2 (\a b -> a - b == -1) (findObjColumn i1) (findObjColumn i2)
         form' (Object _ _ f) = f
 
         
