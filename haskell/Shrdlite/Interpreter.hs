@@ -84,7 +84,7 @@ locationHolds state (id, obj) (Relative relation entity) =
         leftof i1 i2     = fromMaybe False $ liftM2 (\a b -> a - b == -1) (findObjColumn i1) (findObjColumn i2)
         form' (Object _ _ f) = f
 
-        
+-- | Finds all object ids matching the entity in the provided state        
 findEntity :: State -> Entity -> [Id]
 findEntity state entity =
     case entity of

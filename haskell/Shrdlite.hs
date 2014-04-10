@@ -1,7 +1,5 @@
 #!/usr/bin/env runhaskell
 
--- You need the 'json' package: cabal install json
-
 -- Test from the command line:
 -- runhaskell Shrdlite.hs < ../examples/medium.json
 
@@ -24,7 +22,6 @@ import Shrdlite.Interpreter as Interpreter
 
 main :: IO ()
 main = getContents >>= putStrLn . encode . jsonMain . ok . decode
-
 
 jsonMain :: JSObject JSValue -> JSValue
 jsonMain jsinput = makeObj result
@@ -58,7 +55,6 @@ jsonMain jsinput = makeObj result
                 ("output",    showJSON output),
                 ("receivedJSON", showJSON $ jsinput)
                ]
-
 
 parseObjects :: JSObject JSValue -> Objects
 parseObjects obj = M.fromList $ map parseValue $ fromJSObject obj
