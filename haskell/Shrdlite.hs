@@ -141,24 +141,24 @@ locationHolds :: State -> (Id, Object) -> Location -> Bool
 locationHolds state (id, obj) (Relative relation entity) =
     case objPos of
         Nothing -> error "Cannot validate location for non-existent objects"
-        Just (col, height) ->
+        Just (col, height) -> or $
             case relation of
-                Beside  -> or . map (\eId -> leftof id eId || rightof id eId) $ entityIds
-                Leftof  -> or . map (\eId -> leftof id eId) $ entityIds
-                Rightof -> or . map (\eId -> rightof id eId) $ entityIds
-                Above   -> or . map (\eId -> sameColumn id eId && above id eId) $ entityIds
-                Ontop   -> or . map (\eId -> sameColumn id eId && ontop id eId) $ entityIds
-                Under   -> or . map (\eId -> sameColumn id eId && under id eId) $ entityIds
-                Inside  -> or . map (\eId -> sameColumn id eId && inside id eId) $ entityIds
+                Beside  -> map (\eId -> leftof id eId || rightof id eId) $ entityIds
+                Leftof  -> map (\eId -> leftof id eId) $ entityIds
+                Rightof -> map (\eId -> rightof id eId) $ entityIds
+                Above   -> map (\eId -> sameColumn id eId && above id eId) $ entityIds
+                Ontop   -> map (\eId -> sameColumn id eId && ontop id eId) $ entityIds
+                Under   -> map (\eId -> sameColumn id eId && under id eId) $ entityIds
+                Inside  -> map (\eId -> sameColumn id eId && inside id eId) $ entityIds
   where objPos = findObjPos id (world state)
         entityIds = findEntity state entity
         findObjColumn i  = fmap fst . findObjPos i $ world state
         findObjHeight i  = fmap snd . findObjPos i $ world state
         sameColumn i1 i2 = fromMaybe False $ liftM2 elem (return i2) (column state i1)
-        above i1 i2      = fromMaybe False $ liftM2 (>) (findObjColumn i1) (findObjColumn i2)
-        under i1 i2      = fromMaybe False $ liftM2 (<) (findObjColumn i1) (findObjColumn i2)
+        above i1 i2      = fromMaybe False $ liftM2 (>) (findObjHeight i1) (findObjHeight i2)
+        under i1 i2      = fromMaybe False $ liftM2 (<) (findObjHeight i1) (findObjHeight i2)
         ontop i1 i2      = fromMaybe False $ liftM2 (\a b -> a - b == 1) (findObjHeight i1) (findObjHeight i2)
-        inside i1 i2     = above i1 i2 && (form' $ (objects state) M.! i1) == Box
+        inside i1 i2     = ontop i1 i2 && (form' $ (objects state) M.! i2) == Box
         rightof i1 i2    = fromMaybe False $ liftM2 (\a b -> a - b == 1) (findObjColumn i1) (findObjColumn i2)
         leftof i1 i2     = fromMaybe False $ liftM2 (\a b -> a - b == -1) (findObjColumn i1) (findObjColumn i2)
         form' (Object _ _ f) = f
