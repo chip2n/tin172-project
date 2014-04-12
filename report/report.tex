@@ -1,0 +1,61 @@
+\documentclass[a4paper]{article}
+\usepackage{fancyhdr}
+\usepackage[utf8]{inputenc}
+\usepackage{mathtools}
+
+\pagestyle{fancy}
+
+\rhead{tin172}
+\chead{}
+\lhead{group 2}
+
+\title{Artificial Intelligence Project}
+\date{}
+\author{Andreas Arvidsson \\ Sebastian Lagerman \\ Johan Swetz\'{e}n \\ Robin Touche \\}
+
+\begin{document}
+\maketitle
+
+\section*{Background}
+The group decided to work with an agile workflow and to use git for versioning.
+With this kind of workflow will the work be focused on the take utterance.
+
+As of now the assumptions the group have made about the problems that could
+occur are only two problems so far. Firstly an utterance asking to pick up the
+floor would evaluate to an empty list of goals since the floor has a fixed
+position.
+
+Secondly the utterance requesting to take (pick up) multiple objects
+without some secondary objective (such as putting them all in boxes) will be
+impossible since we cannot hold more than a single object at a time.
+
+\section*{Parser}
+The parser is currently unchanged. We intend to extend it with the negation
+command as mentioned below.
+
+\section*{Interpreter}
+The interpreter will be working with the world to find objects that match the
+criteria such that the planner only works with the objects id and not the
+objects description.
+
+\section*{Ambiguity resolver}
+The current ambiguity resolver i very simple. It just checks the number of
+possible interpretations. If we only have one it passes it through, otherwise
+it simply rejects the command.
+
+\section*{Planner}
+The planner is basically untouched as of yet. We have been working mostly on
+the interpreter and ambiguity resolver. It can currently only partially execute
+the take command. It can find the correct column where the requested object
+lies but only picks up the top object in that column.
+
+
+\section*{Extensions}
+\begin{itemize}
+\item Ambiguity resolution by asking follow-up questions, eg. ` Did you mean the blue or the red ball?`
+\item A `switch' utterance, to let the user switch place of two objects while the rest of the world remains the same
+\item Find the shortest/best solution by some measure
+\item Implement negation for objects, eg. `The non-white ball', and for relations, eg. `A ball which is not on the floor'.
+\item Support for the different quantifiers, `a', `any', `the', `all'.
+\end{itemize}
+\end{document}
