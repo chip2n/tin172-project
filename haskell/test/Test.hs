@@ -1,16 +1,15 @@
 module Main where
-import Data.Monoid
+import Data.Monoid (mempty)
 import Test.Framework
 import Test.Framework.Providers.HUnit
-import Test.QuickCheck
 import Test.HUnit
 import Shrdlite.Interpreter
 import Text.JSON
 import Shrdlite.Planner as Planner
 import Shrdlite.Common as Common
 import Shrdlite.Interpreter as Interpreter
-import ShrdliteGrammar
-import Main
+import Shrdlite.Grammar
+import qualified Data.Map as Map
 
 
 -- Properties to implement
@@ -19,20 +18,15 @@ import Main
 
 main :: IO ()
 main = defaultMainWithOpts [ testGroup "findEntityTests" [
-                                                         testCase "findEntityTest1" findEntityTest1,
-                                                         testCase "findEntityTest2" findEntityTest2
+                                                         testCase "findEntityTest1" findEntityTest1
                                                          ]] mempty
 
 
---data Entity = Floor | BasicEntity Quantifier Object | RelativeEntity Quantifier Object Location
---data Location = Relative Relation Entity
---findEntityTest1 =  (assertEqual "lol" 1 1)
 findEntityTest1 = assertBool "Could not find object" ("e" `elem` foundEntities)
-    where obj           = Object Ball Large White
-          loc           = Relative Beside (BasicEntity Any (Object Table AnySize AnyColor))
+    where obj           = Object Large White Ball
+          loc           = Relative Beside (BasicEntity Any (Object AnySize AnyColor Table))
           entity        = RelativeEntity All obj loc
           foundEntities = findEntity startState entity
-findEntityTest2 = 2 @?= 1
 
 startState :: Common.State
 startState = Common.State world holding objects

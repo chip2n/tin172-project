@@ -1,5 +1,5 @@
 
-module CombinatorParser (module CombinatorParser, module Control.Applicative) where
+module Shrdlite.CombinatorParser (module Shrdlite.CombinatorParser, module Control.Applicative) where
 
 import Control.Monad
 import Control.Applicative

@@ -5,8 +5,8 @@
 
 module Main where
 
-import ShrdliteGrammar
-import CombinatorParser
+import Shrdlite.Grammar
+import Shrdlite.CombinatorParser
 import Text.JSON
 import Data.List (elemIndex)
 import Data.Maybe
@@ -22,13 +22,6 @@ import Shrdlite.Interpreter as Interpreter
 
 main :: IO ()
 main = getContents >>= putStrLn . encode . jsonMain . ok . decode
-
-test :: State
-test = State world holding objects
-    where
-        world   = (ok (valFromObj "world" (ok . decode $ testWorld "take the white ball"))) :: World
-        holding = Nothing :: Maybe Id
-        objects = parseObjects $ (ok (valFromObj "objects" (ok . decode $ testWorld "take the white ball"))) :: Objects
 
 
 jsonMain :: JSObject JSValue -> JSValue
@@ -64,33 +57,8 @@ jsonMain jsinput = makeObj result
                 ("receivedJSON", showJSON $ jsinput)
                ]
 
-parseObjects :: JSObject JSValue -> Objects
-parseObjects obj = M.fromList $ map parseValue $ fromJSObject obj
-
-parseValue :: (Id, JSValue) -> (Id, Object)
-parseValue (s, JSObject val) = (s, obj)
- where
-    objForm = head $ parse form' $ [ok (valFromObj "form" val) :: String]
-    objSize = head $ parse size $ [ok (valFromObj "size" val) :: String]
-    objColor = head $ parse color $ [ok (valFromObj "color" val) :: String]
-    obj = Object objSize objColor objForm
-
-form' :: SParser Form
-form' = lexicon [(Brick,   ["brick"]),
-                 (Plank,   ["plank"]),
-                 (Ball,    ["ball"]),
-                 (Pyramid, ["pyramid"]),
-                 (Box,     ["box"]),
-                 (Table,   ["table"])]
 
 showGoals :: [Goal] -> [String]
 showGoals goals = map show goals
 
 
-ok :: Result a -> a
-ok (Ok res) = res
-ok (Error err) = error err
-
-maybeOk :: Result a -> Maybe a
-maybeOk (Ok res) = Just res
-maybeOk (Error _) = Nothing

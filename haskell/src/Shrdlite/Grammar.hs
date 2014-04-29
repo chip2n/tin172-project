@@ -1,6 +1,6 @@
-module ShrdliteGrammar where
+module Shrdlite.Grammar where
 
-import CombinatorParser
+import Shrdlite.CombinatorParser
 
 type SParser = Parser String
 
