@@ -15,7 +15,7 @@ data Goal = TakeGoal GoalObject
 data GoalObject = Flr Int | Obj Id deriving (Show, Eq, Ord)
 type Plan = [String]
 data State = State { world :: World, holding :: Maybe Id, objects :: Objects }
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Show)
 
 findObjPos :: Id -> World -> Maybe (Int,Int)
 findObjPos = findObjPos' 0

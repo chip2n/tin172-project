@@ -23,6 +23,14 @@ import Shrdlite.Interpreter as Interpreter
 main :: IO ()
 main = getContents >>= putStrLn . encode . jsonMain . ok . decode
 
+test :: State
+test = State world holding objects
+    where
+        world   = (ok (valFromObj "world" (ok . decode $ testWorld "take the white ball"))) :: World
+        holding = Nothing :: Maybe Id
+        objects = parseObjects $ (ok (valFromObj "objects" (ok . decode $ testWorld "take the white ball"))) :: Objects
+
+
 jsonMain :: JSObject JSValue -> JSValue
 jsonMain jsinput = makeObj result
     where 

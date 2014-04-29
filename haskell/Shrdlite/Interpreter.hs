@@ -29,8 +29,8 @@ interpret state goal = undefined
 
 -- | Searches the objects map after objects matching the quantifier and location.
 -- Returns Left at ambiguity error, and Right otherwise.
-searchObjects :: State ->
-                 Object -> Quantifier -> Maybe Location -> Either [[(Id, Object)]] [(Id, Object)]
+searchObjects :: State -> Object -> Quantifier ->
+                 Maybe Location -> Either [[(Id, Object)]] [(Id, Object)]
 searchObjects state obj quantifier loc =
     case loc of
         Nothing ->
@@ -99,3 +99,6 @@ findEntity state entity =
 column :: State -> Id -> Maybe [Id]
 column state id = fmap (\pos -> world state !! fst pos) i
   where i = findObjPos id (world state)
+
+testWorld :: String -> String
+testWorld utterance = "{ \"world\": [ [ \"e\" ], [ \"g\", \"l\" ], [], [ \"k\", \"m\", \"f\" ], [] ], \"objects\": { \"a\": { \"form\": \"brick\", \"size\": \"large\", \"color\": \"green\" }, \"b\": { \"form\": \"brick\", \"size\": \"small\", \"color\": \"white\" }, \"c\": { \"form\": \"plank\", \"size\": \"large\", \"color\": \"red\" }, \"d\": { \"form\": \"plank\", \"size\": \"small\", \"color\": \"green\" }, \"e\": { \"form\": \"ball\", \"size\": \"large\", \"color\": \"white\" }, \"f\": { \"form\": \"ball\", \"size\": \"small\", \"color\": \"black\" }, \"g\": { \"form\": \"table\", \"size\": \"large\", \"color\": \"blue\" }, \"h\": { \"form\": \"table\", \"size\": \"small\", \"color\": \"red\" }, \"i\": { \"form\": \"pyramid\", \"size\": \"large\", \"color\": \"yellow\" }, \"j\": { \"form\": \"pyramid\", \"size\": \"small\", \"color\": \"red\" }, \"k\": { \"form\": \"box\", \"size\": \"large\", \"color\": \"yellow\" }, \"l\": { \"form\": \"box\", \"size\": \"large\", \"color\": \"red\" }, \"m\": { \"form\": \"box\", \"size\": \"small\", \"color\": \"blue\" } }, \"holding\": null, \"utterance\":" ++ show (words utterance) ++ "}"
