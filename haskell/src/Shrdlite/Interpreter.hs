@@ -81,7 +81,7 @@ locationHolds state (id, obj) (Relative relation entity) =
         ontop i1 i2      = fromMaybe False $ liftM2 (\a b -> a - b == 1) (findObjHeight i1) (findObjHeight i2)
         inside i1 i2     = ontop i1 i2 && (form' $ (objects state) M.! i2) == Box
         rightof i1 i2    = fromMaybe False $ liftM2 (\a b -> a - b == 1) (findObjColumn i1) (findObjColumn i2)
-        leftof i1 i2     = fromMaybe False $ liftM2 (\a b -> a - b == -1) (findObjColumn i1) (findObjColumn i2)
+        leftof i1 i2     = fromMaybe False $ liftM2 (\a b -> a - b == (-1)) (findObjColumn i1) (findObjColumn i2)
         form' (Object _ _ f) = f
 
 -- | Finds all object ids matching the entity in the provided state        
@@ -93,7 +93,10 @@ findEntity state entity =
             case searchObjects state obj q Nothing of
                 Left _ -> error "Ambiguity error."
                 Right objs -> map fst objs
-        RelativeEntity q obj loc -> undefined -- searchObjects world Nothing objects obj q loc
+        RelativeEntity q obj loc ->
+             case searchObjects state obj q (Just loc) of
+                Left _ -> error "Ambiguity error."
+                Right objs -> map fst objs
 
 -- | Returns the column index of the object id, if any.
 column :: State -> Id -> Maybe [Id]
