@@ -17,15 +17,35 @@ import qualified Data.Map as Map
 --
 
 main :: IO ()
-main = defaultMainWithOpts [ testGroup "findEntityTests" [
-                                                         testCase "findEntityTest1" findEntityTest1
-                                                         ]] mempty
+main = defaultMainWithOpts
+    [ testGroup "findEntityTests"
+        [ testCase "findEntityTest1" findEntityTest1
+        , testCase "findEntityTest2" findEntityTest2
+        , testCase "findEntityTest3" findEntityTest3
+        ]
+    ] mempty
 
-
+-- | Tries to find any white large ball.
+findEntityTest1 :: Assertion
 findEntityTest1 = assertBool "Could not find object" ("e" `elem` foundEntities)
+    where obj           = Object Large White Ball
+          entity        = BasicEntity Any obj
+          foundEntities = findEntity startState entity
+
+-- | Tries to find any white large ball which is next to a table of any size and
+-- any color.
+findEntityTest2 :: Assertion
+findEntityTest2 = assertBool "Could not find object" ("e" `elem` foundEntities)
     where obj           = Object Large White Ball
           loc           = Relative Beside (BasicEntity Any (Object AnySize AnyColor Table))
           entity        = RelativeEntity All obj loc
+          foundEntities = findEntity startState entity
+
+-- | Tries to find any large black ball.
+findEntityTest3 :: Assertion
+findEntityTest3 = assertBool "Found an object not present in the world" (length foundEntities == 0)
+    where obj           = Object Large Black Ball
+          entity        = BasicEntity Any obj
           foundEntities = findEntity startState entity
 
 startState :: Common.State
