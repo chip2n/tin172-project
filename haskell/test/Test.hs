@@ -5,11 +5,8 @@ import Test.Framework.Providers.HUnit
 import Test.HUnit
 import Shrdlite.Interpreter
 import Text.JSON
-import Shrdlite.Planner as Planner
 import Shrdlite.Common as Common
-import Shrdlite.Interpreter as Interpreter
 import Shrdlite.Grammar
-import qualified Data.Map as Map
 
 
 -- Properties to implement
@@ -22,31 +19,121 @@ main = defaultMainWithOpts
         [ testCase "findEntityTest1" findEntityTest1
         , testCase "findEntityTest2" findEntityTest2
         , testCase "findEntityTest3" findEntityTest3
+        , testCase "findEntityTest4" findEntityTest3
+        ]
+    , testGroup "locationHoldsTests"
+        [ testCase "locationHoldsTest1" locationHoldsTest1
+        , testCase "locationHoldsTest2" locationHoldsTest2
+        , testCase "locationHoldsTest3" locationHoldsTest3
+        , testCase "locationHoldsTest4" locationHoldsTest4
+        , testCase "locationHoldsTest5" locationHoldsTest5
+        , testCase "locationHoldsTest6" locationHoldsTest6
+        , testCase "locationHoldsTest7" locationHoldsTest7
+        ]
+    , testGroup "searchObjectsTests"
+        [ testCase "searchObjectsTest1" searchObjectsTest1
+        ]
+    , testGroup "findObjPosTests"
+        [ testCase "findObjPosTest1" findObjPosTest1
         ]
     ] mempty
 
--- | Tries to find any white large ball.
+-- |Tries to find any white large ball.
 findEntityTest1 :: Assertion
 findEntityTest1 = assertBool "Could not find object" ("e" `elem` foundEntities)
-    where obj           = Object Large White Ball
-          entity        = BasicEntity Any obj
-          foundEntities = findEntity startState entity
+    where foundEntities = findEntity startState $ anyEntity largeWhiteBall
 
--- | Tries to find any white large ball which is next to a table of any size and
+-- |Tries to find any white large ball which is next to a table of any size and
 -- any color.
 findEntityTest2 :: Assertion
 findEntityTest2 = assertBool "Could not find object" ("e" `elem` foundEntities)
-    where obj           = Object Large White Ball
-          loc           = Relative Beside (BasicEntity Any (Object AnySize AnyColor Table))
-          entity        = RelativeEntity All obj loc
-          foundEntities = findEntity startState entity
+    where foundEntities = findEntity startState $ allRelativeEntity largeWhiteBall besideTableLocation
 
--- | Tries to find any large black ball.
+-- |Tries to find any large black ball.
 findEntityTest3 :: Assertion
 findEntityTest3 = assertBool "Found an object not present in the world" (length foundEntities == 0)
-    where obj           = Object Large Black Ball
-          entity        = BasicEntity Any obj
-          foundEntities = findEntity startState entity
+    where foundEntities = findEntity startState $ anyEntity largeBlackBall
+
+-- |Tries to find any large white ball which is next to a small brick of any
+-- size and any color.
+findEntityTest4 :: Assertion
+findEntityTest4 = assertBool ("Expected no matching objects, but found: " ++ show foundEntities) (length foundEntities == 0)
+    where foundEntities = findEntity startState $ anyRelativeEntity largeWhiteBall besideSmallBrickLocation
+
+-- |Checks ambiguities
+findEntityTest5 :: Assertion
+findEntityTest5 = undefined
+
+-- |Tests Beside relation
+locationHoldsTest1 :: Assertion
+locationHoldsTest1 = assertBool "Beside location expected to hold, but doesn't" locHolds
+    where locHolds = locationHolds startState (id, obj) loc
+          id       = "l"
+          obj      = Object Large AnyColor Box 
+          loc      = Relative Beside (BasicEntity Any largeWhiteBall)
+
+-- |Tests Leftof relation
+locationHoldsTest2 :: Assertion
+locationHoldsTest2 = assertBool "Leftof location expected to hold, but doesn't" locHolds
+    where locHolds = locationHolds startState (id, obj) loc
+          id       = "e"
+          obj      = largeWhiteBall
+          loc      = Relative Leftof (BasicEntity Any (Object Large AnyColor Box))
+
+-- |Tests Rightof relation
+locationHoldsTest3 :: Assertion
+locationHoldsTest3 = assertBool "Rightof location expected to hold, but doesn't" locHolds
+    where locHolds = locationHolds startState (id, obj) loc
+          id       = "l"
+          obj      = Object Large AnyColor Box 
+          loc      = Relative Rightof (BasicEntity Any largeWhiteBall)
+
+-- |Tests Above relation
+locationHoldsTest4 :: Assertion
+locationHoldsTest4 = undefined
+
+-- |Tests Ontop relation
+locationHoldsTest5 :: Assertion
+locationHoldsTest5 = assertBool "Ontop location expected to hold, but doesn't" locHolds
+    where locHolds = locationHolds startState (id, obj) loc
+          id       = "l"
+          obj      = Object Large AnyColor Box 
+          loc      = Relative Ontop (BasicEntity Any (Object AnySize AnyColor Table))
+
+-- |Tests Under relation
+locationHoldsTest6 :: Assertion
+locationHoldsTest6 = undefined
+
+-- |Tests Inside relation
+locationHoldsTest7 :: Assertion
+locationHoldsTest7 = undefined
+
+searchObjectsTest1 :: Assertion
+searchObjectsTest1 = undefined
+
+findObjPosTest1 :: Assertion
+findObjPosTest1 = undefined
+
+largeWhiteBall :: Object
+largeWhiteBall = Object Large White Ball
+
+largeBlackBall :: Object
+largeBlackBall = Object Large Black Ball
+
+besideTableLocation :: Location
+besideTableLocation = Relative Beside (BasicEntity Any (Object AnySize AnyColor Table))
+
+besideSmallBrickLocation :: Location
+besideSmallBrickLocation = Relative Beside (BasicEntity Any (Object Small AnyColor Brick))
+
+anyEntity :: Object -> Entity
+anyEntity obj = BasicEntity Any obj
+
+anyRelativeEntity :: Object -> Location -> Entity
+anyRelativeEntity obj loc = RelativeEntity Any obj loc
+
+allRelativeEntity :: Object -> Location -> Entity
+allRelativeEntity obj loc = RelativeEntity All obj loc
 
 startState :: Common.State
 startState = Common.State world holding objects
