@@ -62,6 +62,10 @@ takeObject state goal s e = case takeHighest e of
 validState :: (State, Goal) -> Bool
 validState _ = True -- TODO: actually check :)
 
+-- Joins two parts of the world together, modifying the first element in the
+-- second list. The function is what modifies the element (which is itself a
+-- list) and is normally either placing or taking an object from the top of
+-- the list. Returns a new world
 joinModified :: ([[Id]], [[Id]]) -> ([Id] -> [Id]) -> Maybe [[Id]]
 joinModified ([], []) f = Nothing
 joinModified (xs, []) f = Just xs
