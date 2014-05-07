@@ -92,7 +92,11 @@ locationHoldsTest3 = assertBool "Rightof location expected to hold, but doesn't"
 
 -- |Tests Above relation
 locationHoldsTest4 :: Assertion
-locationHoldsTest4 = undefined
+locationHoldsTest4 = assertBool "Above location expected to hold, but doesn't" locHolds
+    where locHolds = locationHolds startState (id, obj) loc
+          id       = "f"
+          obj      = smallBlackBall
+          loc      = Relative Above (BasicEntity Any (Object AnySize AnyColor Box))
 
 -- |Tests Ontop relation
 locationHoldsTest5 :: Assertion
@@ -104,14 +108,24 @@ locationHoldsTest5 = assertBool "Ontop location expected to hold, but doesn't" l
 
 -- |Tests Under relation
 locationHoldsTest6 :: Assertion
-locationHoldsTest6 = undefined
+locationHoldsTest6 = assertBool "Under location expected to hold, but doesn't" locHolds
+    where locHolds = locationHolds startState (id, obj) loc
+          id       = "m"
+          obj      = Object Small Blue Box
+          loc      = Relative Under (BasicEntity Any (Object AnySize AnyColor Ball))
 
 -- |Tests Inside relation
 locationHoldsTest7 :: Assertion
-locationHoldsTest7 = undefined
+locationHoldsTest7 = assertBool "Inside location expected to hold, but doesn't" locHolds
+    where locHolds = locationHolds startState (id, obj) loc
+          id       = "f"
+          obj      = smallBlackBall
+          loc      = Relative Inside (BasicEntity Any (Object AnySize AnyColor Box))
 
 searchObjectsTest1 :: Assertion
-searchObjectsTest1 = undefined
+searchObjectsTest1 = assertBool ("Expected to find " ++ show expected ++ " but found " ++ show found) (expected == found)
+    where expected = Right [("e", largeWhiteBall), ("f", smallBlackBall)] :: Either [[(Id, Object)]] [(Id, Object)]
+          found    = searchObjects startState (Object AnySize AnyColor Ball) All Nothing
 
 findObjPosTest1 :: Assertion
 findObjPosTest1 = assertBool "Object with id \"e\" was not found in column 0 and height 0" ((findObjPos "e" (world startState)) == Just (0,0))
@@ -127,6 +141,9 @@ largeWhiteBall = Object Large White Ball
 
 largeBlackBall :: Object
 largeBlackBall = Object Large Black Ball
+
+smallBlackBall :: Object
+smallBlackBall = Object Small Black Ball
 
 besideTableLocation :: Location
 besideTableLocation = Relative Beside (BasicEntity Any (Object AnySize AnyColor Table))
