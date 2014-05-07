@@ -24,8 +24,21 @@ interpret state (Take entity) =
                 Right found -> map (\(i,_) -> TakeGoal (Obj i)) found
                 Left _     -> error "Ambiguity error - searchObjects returned Left."
   where matchingObjects q obj l = searchObjects state obj q l
-interpret state (Put (Relative relation entity)) = error "interpret: Put TBD"
+interpret state (Put (Relative relation entity)) = 
+    case entity of
+        BasicEntity q obj ->
+            case matchingObjects q obj Nothing of
+                Right found -> map (\(i,_) -> PutGoal relation (Obj hold) (Obj i)) found
+                Left _      -> error "Ambiguity error - searchObject returned Left."
+        RelativeEntity q obj loc -> 
+            case matchingObjects q obj (Just loc) of
+                Right found -> map (\(i,_) -> PutGoal relation (Obj hold) (Obj i)) found
+                Left _     -> error "Ambiguity error - searchObjects returned Left."
+  where hold = fromJust (holding state)
+        matchingObjects q obj l = searchObjects state obj q l
 interpret state (Move entity location) = error "interpret: Move TBD"
+
+--PutGoal Relation GoalObject GoalObject
 
 
 -- | Searches the objects map after objects matching the quantifier and location.
