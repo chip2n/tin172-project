@@ -19,6 +19,7 @@ type Plan = [String]
 data State = State { world :: World, holding :: Maybe Id, objects :: Objects }
   deriving (Eq, Ord, Show)
 
+-- |Finds the column and height of the object with the provided id
 findObjPos :: Id -> World -> Maybe (Int,Int)
 findObjPos = findObjPos' 0
 
