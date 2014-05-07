@@ -19,7 +19,8 @@ main = defaultMainWithOpts
         [ testCase "findEntityTest1" findEntityTest1
         , testCase "findEntityTest2" findEntityTest2
         , testCase "findEntityTest3" findEntityTest3
-        , testCase "findEntityTest4" findEntityTest3
+        , testCase "findEntityTest4" findEntityTest4
+        , testCase "findEntityTest5" findEntityTest5
         ]
     , testGroup "locationHoldsTests"
         [ testCase "locationHoldsTest1" locationHoldsTest1
