@@ -75,7 +75,9 @@ locationHolds state (id, obj) (Relative relation entity) =
                 Under   -> map (\eId -> sameColumn id eId && under id eId) $ entityIds
                 Inside  -> map (\eId -> sameColumn id eId && inside id eId) $ entityIds
   where objPos = findObjPos id (world state)
-        entityIds = findEntity state entity
+        entityIds = case findEntity state entity of
+                        Right objs -> objs
+                        Left _     -> []
         findObjColumn i  = fmap fst . findObjPos i $ world state
         findObjHeight i  = fmap snd . findObjPos i $ world state
         sameColumn i1 i2 = fromMaybe False $ liftM2 elem (return i2) (column state i1)
@@ -88,18 +90,18 @@ locationHolds state (id, obj) (Relative relation entity) =
         form' (Object _ _ f) = f
 
 -- | Finds all object ids matching the entity in the provided state        
-findEntity :: State -> Entity -> [Id]
+findEntity :: State -> Entity -> Either [[Id]] [Id]
 findEntity state entity =
     case entity of
-        Floor -> []
+        Floor -> Right []
         BasicEntity q obj -> 
             case searchObjects state obj q Nothing of
-                Left _ -> error "Ambiguity error."
-                Right objs -> map fst objs
+                Left objs -> Left $ map (\es -> map fst es) objs
+                Right objs -> Right $ map fst objs
         RelativeEntity q obj loc ->
              case searchObjects state obj q (Just loc) of
-                Left _ -> error "Ambiguity error."
-                Right objs -> map fst objs
+                Left objs -> Left $ map (\es -> map fst es) objs
+                Right objs -> Right $ map fst objs
 
 -- | Returns the column index of the object id, if any.
 column :: State -> Id -> Maybe [Id]
