@@ -36,14 +36,17 @@ searchObjects state obj quantifier loc =
         Nothing ->
             case quantifier of
                 All -> Right foundObjects
-                Any -> Right $ take 1 foundObjects
+                --Any -> Right $ take 1 foundObjects
+                Any -> Right foundObjects
                 The -> case length foundObjects of
                            1 -> Right $ take 1 foundObjects
                            _ -> Left $ map (\a -> [a]) foundObjects
         Just location ->
             case quantifier of
                 All -> Right foundObjects
-                Any -> Right $ take 1 foundObjects
+                --Any -> Right $ take 1 foundObjects
+                Any -> let foundObjects' = filter (\(i, o) -> locationHolds state (i, o) location) foundObjects
+                       in Right foundObjects'
                 The -> let foundObjects' = filter (\(i, o) -> locationHolds state (i, o) location) foundObjects
                        in case length foundObjects' of
                               1 -> Right $ take 1 foundObjects'

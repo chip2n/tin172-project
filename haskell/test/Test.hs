@@ -35,6 +35,8 @@ main = defaultMainWithOpts
         ]
     , testGroup "findObjPosTests"
         [ testCase "findObjPosTest1" findObjPosTest1
+        , testCase "findObjPosTest2" findObjPosTest2
+        , testCase "findObjPosTest3" findObjPosTest3
         ]
     ] mempty
 
@@ -112,7 +114,13 @@ searchObjectsTest1 :: Assertion
 searchObjectsTest1 = undefined
 
 findObjPosTest1 :: Assertion
-findObjPosTest1 = undefined
+findObjPosTest1 = assertBool "Object with id \"e\" was not found in column 0 and height 0" ((findObjPos "e" (world startState)) == Just (0,0))
+
+findObjPosTest2 :: Assertion
+findObjPosTest2 = assertBool "Object with id \"g\" was not found in column 1 and height 0" ((findObjPos "g" (world startState)) == Just (1,0))
+
+findObjPosTest3 :: Assertion
+findObjPosTest3 = assertBool "Object with id \"l\" was not found in column 1 and height 1" ((findObjPos "l" (world startState)) == Just (1,1))
 
 largeWhiteBall :: Object
 largeWhiteBall = Object Large White Ball
