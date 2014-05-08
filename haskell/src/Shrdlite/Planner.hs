@@ -58,7 +58,7 @@ takeObject state goal s e = case takeHighest e of
   where
     --newWorld = fromJust $ joinModified state e maybeInit
     newWorld = case joinModified state e maybeInit of
-      Nothing -> error "error"
+      Nothing -> error "Error: Physical laws violated"
       Just e' -> e'
     maybeInit [] = []
     maybeInit xs = init xs
@@ -98,7 +98,7 @@ validate (Object _  _ Ball) _                     = False
 validate (Object s1 _ Box) (Object s2 _ Plank)    = s1 <= s2
 validate (Object s1 _ Box) (Object s2 _ Table)    = s1 <= s2
 validate (Object _  _ Box) (Object Large _ Brick) = True
-validate (Object s1 _ _) (Object s2 _ _)          = s1 < s2
+validate (Object s1 _ _) (Object s2 _ _)          = s1 <= s2
 
 takeHighest :: ([[Id]], [[Id]]) -> Maybe Id
 takeHighest ([], []) = Nothing
