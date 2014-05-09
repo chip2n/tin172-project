@@ -49,28 +49,32 @@ main = defaultMainWithOpts
 -- |Tries to find any white large ball.
 findEntityTest1 :: Assertion
 findEntityTest1 = assertBool "Could not find object" ("e" `elem` foundEntities)
-    where foundEntities = findEntity startState $ anyEntity largeWhiteBall
+    where Right foundEntities = findEntity startState $ anyEntity largeWhiteBall
 
 -- |Tries to find any white large ball which is next to a table of any size and
 -- any color.
 findEntityTest2 :: Assertion
 findEntityTest2 = assertBool "Could not find object" ("e" `elem` foundEntities)
-    where foundEntities = findEntity startState $ allRelativeEntity largeWhiteBall besideTableLocation
+    where Right foundEntities = findEntity startState $ allRelativeEntity largeWhiteBall besideTableLocation
 
 -- |Tries to find any large black ball.
 findEntityTest3 :: Assertion
 findEntityTest3 = assertBool "Found an object not present in the world" (length foundEntities == 0)
-    where foundEntities = findEntity startState $ anyEntity largeBlackBall
+    where Right foundEntities = findEntity startState $ anyEntity largeBlackBall
 
 -- |Tries to find any large white ball which is next to a small brick of any
 -- size and any color.
 findEntityTest4 :: Assertion
 findEntityTest4 = assertBool ("Expected no matching objects, but found: " ++ show foundEntities) (length foundEntities == 0)
-    where foundEntities = findEntity startState $ anyRelativeEntity largeWhiteBall besideSmallBrickLocation
+    where Right foundEntities = findEntity startState $ anyRelativeEntity largeWhiteBall besideSmallBrickLocation
 
 -- |Checks ambiguities
 findEntityTest5 :: Assertion
-findEntityTest5 = undefined
+findEntityTest5 = assertBool "Expected ambiguity, but received a correct result." isAmbiguity
+    where foundEntities = findEntity startState $ BasicEntity The (Object AnySize AnyColor Ball)
+          isAmbiguity = case foundEntities of
+                          Left _  -> True
+                          Right _ -> False
 
 -- |Tests Beside relation
 locationHoldsTest1 :: Assertion

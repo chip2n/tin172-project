@@ -1,8 +1,10 @@
 module Shrdlite.Planner where
 
 import Shrdlite.Common
+import Shrdlite.Grammar
 
 import qualified Data.Set as S
+import qualified Data.Map as M
 import qualified Data.List as L
 import Data.Graph.AStar
 import Data.Maybe
@@ -47,14 +49,17 @@ placeObject state goal h s e = case newWorld h of
       where
         newState = (state {holding=Nothing, world=w},goal)
   where
-    newWorld elem = joinModified e (\x -> x ++ [elem])
+    newWorld elem = joinModified state e (\x -> x ++ [elem])
 
 takeObject :: State -> Goal -> S.Set (State, Goal) -> ([[Id]], [[Id]]) -> S.Set (State, Goal)
 takeObject state goal s e = case takeHighest e of
   Nothing -> s
   Just id -> S.insert (state {holding=Just id, world=newWorld},goal) s
   where
-    newWorld = fromJust $ joinModified e maybeInit
+    --newWorld = fromJust $ joinModified state e maybeInit
+    newWorld = case joinModified state e maybeInit of
+      Nothing -> error "Error: Physical laws violated"
+      Just e' -> e'
     maybeInit [] = []
     maybeInit xs = init xs
 
@@ -66,10 +71,34 @@ validState _ = True -- TODO: actually check :)
 -- second list. The function is what modifies the element (which is itself a
 -- list) and is normally either placing or taking an object from the top of
 -- the list. Returns a new world
-joinModified :: ([[Id]], [[Id]]) -> ([Id] -> [Id]) -> Maybe [[Id]]
-joinModified ([], []) f = Nothing
-joinModified (xs, []) f = Just xs
-joinModified (xs, y:ys) f = Just $ xs ++ f y:ys
+joinModified :: State -> ([[Id]], [[Id]]) -> ([Id] -> [Id]) -> Maybe [[Id]]
+joinModified _ ([], []) f = Nothing
+joinModified _ (xs, []) f = Just xs
+joinModified state (xs, y:ys) f = case val state (f y) of
+   Nothing -> Nothing
+   Just y' -> Just $ xs ++ y':ys
+
+val :: State -> [Id] -> Maybe [Id]
+val state y' | length y' > 1 = case l y1 of
+                  Nothing  -> Nothing
+                  Just y1' -> case l y2 of
+                     Nothing  -> Nothing
+                     Just y2' -> if (validate y1' y2')
+                                 then Just y'
+                                 else Nothing
+             | otherwise = Just y'
+      where l ys'  = M.lookup ys' objs
+            [y1, y2] = take 2 $ reverse y'
+            objs = objects state
+
+validate :: Object -> Object -> Bool
+validate _                  (Object _ _ Ball)     = False
+validate (Object s1 _ Ball) (Object s2 _ Box)     = s1 < s2
+validate (Object _  _ Ball) _                     = False
+validate (Object s1 _ Box) (Object s2 _ Plank)    = s1 <= s2
+validate (Object s1 _ Box) (Object s2 _ Table)    = s1 <= s2
+validate (Object _  _ Box) (Object Large _ Brick) = True
+validate (Object s1 _ _) (Object s2 _ _)          = s1 <= s2
 
 takeHighest :: ([[Id]], [[Id]]) -> Maybe Id
 takeHighest ([], []) = Nothing
