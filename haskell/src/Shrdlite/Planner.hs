@@ -3,11 +3,11 @@ module Shrdlite.Planner where
 import Shrdlite.Common
 import Shrdlite.Grammar
 
-import qualified Data.Set as S
-import qualified Data.Map as M
-import qualified Data.List as L
 import Data.Graph.AStar
 import Data.Maybe
+import qualified Data.List as L
+import qualified Data.Map as M
+import qualified Data.Set as S
 
 -- | Creates a list of moves which together creates a "Plan". The plan can
 -- consist of messages to the user and commands in the form of
@@ -42,10 +42,7 @@ stateGraph (state, goal) = case holding state of
 placeObject :: State -> Goal -> Id -> S.Set (State, Goal) -> ([[Id]], [[Id]]) -> S.Set (State, Goal)
 placeObject state goal h s e = case newWorld h of
   Nothing -> s
-  Just w ->
-    if validState newState
-    then S.insert newState s
-    else s
+  Just w -> S.insert newState s
       where
         newState = (state {holding=Nothing, world=w},goal)
   where
@@ -73,11 +70,15 @@ validState _ = True -- TODO: actually check :)
 -- the list. Returns a new world
 joinModified :: State -> ([[Id]], [[Id]]) -> ([Id] -> [Id]) -> Maybe [[Id]]
 joinModified _ ([], []) f = Nothing
-joinModified _ (xs, []) f = Just xs
+joinModified _ (xs, []) f = Nothing
 joinModified state (xs, y:ys) f = case val state (f y) of
    Nothing -> Nothing
    Just y' -> Just $ xs ++ y':ys
+--if length y' > 1 && head y' == "c" && last y' == "b"
+--              then error $ show y'
 
+-- Taeks a column and checks if the the two topmost objects are in the correct
+-- order. If there are less than two object we assume there can be no conflicts.
 val :: State -> [Id] -> Maybe [Id]
 val state y' | length y' > 1 = case l y1 of
                   Nothing  -> Nothing
@@ -91,6 +92,8 @@ val state y' | length y' > 1 = case l y1 of
             [y1, y2] = take 2 $ reverse y'
             objs = objects state
 
+-- Tests whether the first object can be placed immediately above the second
+-- object without violating the given constraints.
 validate :: Object -> Object -> Bool
 validate _                  (Object _ _ Ball)     = False
 validate (Object s1 _ Ball) (Object s2 _ Box)     = s1 < s2
