@@ -45,6 +45,7 @@ main = defaultMainWithOpts
         , testCase "validateObjectTest2" validateObjectTest2
         , testCase "validateObjectTest3" validateObjectTest3
         , testCase "validateObjectTest4" validateObjectTest4
+        , testCase "validateObjectTest5" validateObjectTest5
         ]
     ] mempty
 
@@ -150,22 +151,36 @@ findObjPosTest3 = assertBool "Object with id \"l\" was not found in column 1 and
 
 -- | Test if a large ball can be placed in a large box
 validateObjectTest1 :: Assertion
---validateObjectTest1 = undefined
 validateObjectTest1 = assertBool "The large ball can be placed in a large box" $ not $ validate largeWhiteBall largeRedBox
 
 -- | Tests if we can't place something on a ball
 validateObjectTest2 :: Assertion
---validateObjectTest2 = undefined
 validateObjectTest2 = assertBool "I managed to place a large box on a large ball" $ not $ validate largeRedBox largeWhiteBall
 
 -- | Tests if placing a large object on a small object returns false
 validateObjectTest3 :: Assertion
---validateObjectTest3 = undefined
 validateObjectTest3 = assertBool "I managed to place a large object on a small object" $ not $ validate largeRedBox smallGreenBox
 
 -- | Testa whether we can place a large plank on top of a small brick
 validateObjectTest4 :: Assertion
 validateObjectTest4 = assertBool "I managed to place a large plank on a small brick" $ not $ validate (Object Large Red Plank) (Object Small White Brick)
+
+-- | Checks that nothing can be placed on a ball
+validateObjectTest5 :: Assertion
+validateObjectTest5 = assertBool "I managed to place something on a ball"
+  -- $ validate (Object Small White Ball) (Object Large White Box)
+  $ and $ map not $ map f $ map xs ys
+  -- $ and $ map not $ map f $ map xs ys
+    where
+      f :: Object -> Bool
+      f = flip validate (Object Small White Ball)
+
+      xs :: Form -> Object
+      xs x = (Object Large White x)
+
+      ys :: [Form]
+      ys = [Brick, Plank, Ball, Pyramid, Box, Table]
+
 
 --Boxes cannot contain pyramids or planks of the same size
 --Boxes can only be supported by tables or planks of the same size, but large boxes can also be supported by large bricks
