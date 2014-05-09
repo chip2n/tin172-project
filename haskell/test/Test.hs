@@ -1,12 +1,13 @@
 module Main where
 import Data.Monoid (mempty)
+import Shrdlite.Common as Common
+import Shrdlite.Grammar
+import Shrdlite.Interpreter
+import Shrdlite.Planner
 import Test.Framework
 import Test.Framework.Providers.HUnit
 import Test.HUnit
-import Shrdlite.Interpreter
 import Text.JSON
-import Shrdlite.Common as Common
-import Shrdlite.Grammar
 
 
 -- Properties to implement
@@ -43,6 +44,7 @@ main = defaultMainWithOpts
         [ testCase "validateObjectTest1" validateObjectTest1
         , testCase "validateObjectTest2" validateObjectTest2
         , testCase "validateObjectTest3" validateObjectTest3
+        , testCase "validateObjectTest4" validateObjectTest4
         ]
     ] mempty
 
@@ -148,18 +150,22 @@ findObjPosTest3 = assertBool "Object with id \"l\" was not found in column 1 and
 
 -- | Test if a large ball can be placed in a large box
 validateObjectTest1 :: Assertion
-validateObjectTest1 = undefined
---validateObjectTest1 = assertBool "The large ball can't be placed in a large box" $ validate largeWhiteBall largeRedBox
+--validateObjectTest1 = undefined
+validateObjectTest1 = assertBool "The large ball can be placed in a large box" $ not $ validate largeWhiteBall largeRedBox
 
 -- | Tests if we can't place something on a ball
 validateObjectTest2 :: Assertion
-validateObjectTest2 = undefined
---validateObjectTest2 = assertBool "I managed to place a large box on a large ball" $ validate largeRedBox largeWhiteBall
+--validateObjectTest2 = undefined
+validateObjectTest2 = assertBool "I managed to place a large box on a large ball" $ not $ validate largeRedBox largeWhiteBall
 
 -- | Tests if placing a large object on a small object returns false
 validateObjectTest3 :: Assertion
-validateObjectTest3 = undefined
---validateObjectTest3 = assertBool "I managed to place a large object on a small object" $ validate largeRedBox smallGreenBox
+--validateObjectTest3 = undefined
+validateObjectTest3 = assertBool "I managed to place a large object on a small object" $ not $ validate largeRedBox smallGreenBox
+
+-- | Testa whether we can place a large plank on top of a small brick
+validateObjectTest4 :: Assertion
+validateObjectTest4 = assertBool "I managed to place a large plank on a small brick" $ not $ validate (Object Large Red Plank) (Object Small White Brick)
 
 --Boxes cannot contain pyramids or planks of the same size
 --Boxes can only be supported by tables or planks of the same size, but large boxes can also be supported by large bricks
