@@ -39,6 +39,11 @@ main = defaultMainWithOpts
         , testCase "findObjPosTest2" findObjPosTest2
         , testCase "findObjPosTest3" findObjPosTest3
         ]
+    , testGroup "validateObjectTest"
+        [ testCase "validateObjectTest1" validateObjectTest1
+        , testCase "validateObjectTest2" validateObjectTest2
+        , testCase "validateObjectTest3" validateObjectTest3
+        ]
     ] mempty
 
 -- |Tries to find any white large ball.
@@ -137,6 +142,24 @@ findObjPosTest2 = assertBool "Object with id \"g\" was not found in column 1 and
 findObjPosTest3 :: Assertion
 findObjPosTest3 = assertBool "Object with id \"l\" was not found in column 1 and height 1" ((findObjPos "l" (world startState)) == Just (1,1))
 
+-- | Test if a large ball can be placed in a large box
+validateObjectTest1 :: Assertion
+validateObjectTest1 = undefined
+--validateObjectTest1 = assertBool "The large ball can't be placed in a large box" $ validate largeWhiteBall largeRedBox
+
+-- | Tests if we can't place something on a ball
+validateObjectTest2 :: Assertion
+validateObjectTest2 = undefined
+--validateObjectTest2 = assertBool "I managed to place a large box on a large ball" $ validate largeRedBox largeWhiteBall
+
+-- | Tests if placing a large object on a small object returns false
+validateObjectTest3 :: Assertion
+validateObjectTest3 = undefined
+--validateObjectTest3 = assertBool "I managed to place a large object on a small object" $ validate largeRedBox smallGreenBox
+
+--Boxes cannot contain pyramids or planks of the same size
+--Boxes can only be supported by tables or planks of the same size, but large boxes can also be supported by large bricks
+
 largeWhiteBall :: Object
 largeWhiteBall = Object Large White Ball
 
@@ -145,6 +168,12 @@ largeBlackBall = Object Large Black Ball
 
 smallBlackBall :: Object
 smallBlackBall = Object Small Black Ball
+
+largeRedBox :: Object
+largeRedBox = Object Large Red Box
+
+smallGreenBox :: Object
+smallGreenBox = Object Small Green Box
 
 besideTableLocation :: Location
 besideTableLocation = Relative Beside (BasicEntity Any (Object AnySize AnyColor Table))
