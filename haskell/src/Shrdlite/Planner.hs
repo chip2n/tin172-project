@@ -69,8 +69,8 @@ validState _ = True -- TODO: actually check :)
 -- list) and is normally either placing or taking an object from the top of
 -- the list. Returns a new world
 joinModified :: State -> ([[Id]], [[Id]]) -> ([Id] -> [Id]) -> Maybe [[Id]]
-joinModified _ ([], []) f = Nothing
-joinModified _ (xs, []) f = Nothing
+joinModified _ ([], []) _ = Nothing
+joinModified _ (_, []) _ = Nothing
 joinModified state (xs, y:ys) f = case val state (f y) of
    Nothing -> Nothing
    Just y' -> Just $ xs ++ y':ys
@@ -96,6 +96,7 @@ val state y' | length y' > 1 = case l y1 of
 -- object without violating the given constraints.
 validate :: Object -> Object -> Bool
 validate _                  (Object _     _ Ball)  = False
+-- validate (Object s1 _ Ball) (Object s2    _ Box)   = s1 <= s2
 validate (Object s1 _ Ball) (Object s2    _ Box)   = s1 < s2
 validate (Object _  _ Ball) _                      = False
 validate (Object s1 _ Box)  (Object s2    _ Plank) = s1 <= s2
@@ -106,7 +107,7 @@ validate (Object s1 _ _)    (Object s2    _ _)     = s1 <= s2
 takeHighest :: ([[Id]], [[Id]]) -> Maybe Id
 takeHighest ([], []) = Nothing
 takeHighest (xs, []) = maybeLast $ last xs
-takeHighest (xs, y:ys) = maybeLast y
+takeHighest (_, y:_) = maybeLast y
 
 maybeLast :: [a] -> Maybe a
 maybeLast [] = Nothing
@@ -126,7 +127,7 @@ heuristics (state, goal) = case goal of
     Just holdingId      ->
       if i == holdingId
       then 0
-      else (+) 1 $ idHeight i (world state)
+      else (+) 0 $ idHeight i (world state)
   PutGoal {}        -> error "PutGoal not implemented yet"
 
 idHeight :: Id -> World -> Int
@@ -149,10 +150,14 @@ aStarSolve :: (State,Goal) -> Maybe [(State,Goal)]
 aStarSolve = aStar stateGraph dist heuristics check
 
 statePlan :: [(State,Goal)] -> Plan
-statePlan ((s,_):[]) = []
-statePlan ((s1,_):(s2,g):xs) = statePlan ((s2,g):xs) ++ stateTransition w1 w2 0
+statePlan ((_,_):[]) = []
+statePlan ((s1,_):(s2,g):xs) =  stateTransition w1 w2 0 ++ statePlan ((s2,g):xs)
   where w1 = world s1
         w2 = world s2
+
+printPlan :: [(State,Goal)] -> String
+printPlan [] = ""
+printPlan ((s,_):xs) = show (world s) ++ "<br>" ++ (printPlan xs)
 
 stateTransition :: World -> World -> Int -> Plan
 stateTransition [] [] _ = error "stateTransition: no changes"
