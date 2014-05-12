@@ -206,9 +206,6 @@ validateObjectTest7 = assertBool "I managed to place a box on something other th
        ++ [(not $ validate (oc Small Box) p) | p <- map (oc Large) [Table,Plank,Brick]]
        ++ [(not $ validate (oc Large Box) p) | p <- map (oc Small) [Table,Plank]]
     where
-      --f :: Object -> Object -> Bool
-      --f bo o = validate bo o
-
       oc :: Size -> Form -> Object
       oc sz frm = (Object sz White frm)
       
