@@ -168,9 +168,7 @@ validateObjectTest4 = assertBool "I managed to place a large plank on a small br
 -- | Checks that nothing can be placed on a ball
 validateObjectTest5 :: Assertion
 validateObjectTest5 = assertBool "I managed to place something on a ball"
-  -- $ validate (Object Small White Ball) (Object Large White Box)
   $ and $ map not $ map f $ map xs ys
-  -- $ and $ map not $ map f $ map xs ys
     where
       f :: Object -> Bool
       f = flip validate (Object Small White Ball)
