@@ -13,9 +13,9 @@ import qualified Data.Set as S
 -- consist of messages to the user and commands in the form of
 -- "pick FLOOR_SPACE" and "drop FLOOR_SPACE"
 solve :: World -> Maybe Id -> Objects -> Goal -> Plan
-solve world holding objects goal = statePlan plan
+solve w h o goal = statePlan plan
   where
-    state = State { world=world, holding=holding, objects=objects }
+    state = State { world=w, holding=h, objects=o}
     solution = aStarSolve (state,goal)
     plan = (state, goal) : (fromMaybe [] solution)
 
@@ -33,7 +33,7 @@ solve world holding objects goal = statePlan plan
 -- Given a state, this produces all possible neighbours
 stateGraph :: (State,Goal) -> S.Set (State,Goal)
 stateGraph (state, goal) = case holding state of
-  Just id -> foldl (placeObject state goal id) S.empty worldParts -- TODO: foldl' or foldr instead
+  Just i  -> foldl (placeObject state goal i) S.empty worldParts -- TODO: foldl' or foldr instead
   Nothing -> foldl (takeObject state goal) S.empty worldParts -- TODO: foldl' or foldr instead
   where
     w = world state
@@ -46,12 +46,12 @@ placeObject state goal h s e = case newWorld h of
       where
         newState = (state {holding=Nothing, world=w},goal)
   where
-    newWorld elem = joinModified state e (\x -> x ++ [elem])
+    newWorld elm = joinModified state e (\x -> x ++ [elm])
 
 takeObject :: State -> Goal -> S.Set (State, Goal) -> ([[Id]], [[Id]]) -> S.Set (State, Goal)
 takeObject state goal s e = case takeHighest e of
   Nothing -> s
-  Just id -> S.insert (state {holding=Just id, world=newWorld},goal) s
+  Just i  -> S.insert (state {holding=Just i, world=newWorld},goal) s
   where
     --newWorld = fromJust $ joinModified state e maybeInit
     newWorld = case joinModified state e maybeInit of
@@ -96,8 +96,7 @@ val state y' | length y' > 1 = case l y1 of
 -- object without violating the given constraints.
 validate :: Object -> Object -> Bool
 validate _                  (Object _     _ Ball)  = False
--- validate (Object s1 _ Ball) (Object s2    _ Box)   = s1 <= s2
-validate (Object s1 _ Ball) (Object s2    _ Box)   = s1 < s2
+validate (Object s1 _ Ball) (Object s2    _ Box)   = s1 <= s2
 validate (Object _  _ Ball) _                      = False
 validate (Object s1 _ Box)  (Object s2    _ Plank) = s1 <= s2
 validate (Object s1 _ Box)  (Object s2    _ Table) = s1 <= s2
@@ -127,7 +126,7 @@ heuristics (state, goal) = case goal of
     Just holdingId      ->
       if i == holdingId
       then 0
-      else (+) 0 $ idHeight i (world state)
+      else idHeight i (world state)
   PutGoal {}        -> error "PutGoal not implemented yet"
 
 idHeight :: Id -> World -> Int
@@ -151,13 +150,9 @@ aStarSolve = aStar stateGraph dist heuristics check
 
 statePlan :: [(State,Goal)] -> Plan
 statePlan ((_,_):[]) = []
-statePlan ((s1,_):(s2,g):xs) =  stateTransition w1 w2 0 ++ statePlan ((s2,g):xs)
+statePlan ((s1,_):(s2,g):xs) = stateTransition w1 w2 0 ++ statePlan ((s2,g):xs)
   where w1 = world s1
         w2 = world s2
-
-printPlan :: [(State,Goal)] -> String
-printPlan [] = ""
-printPlan ((s,_):xs) = show (world s) ++ "<br>" ++ (printPlan xs)
 
 stateTransition :: World -> World -> Int -> Plan
 stateTransition [] [] _ = error "stateTransition: no changes"
