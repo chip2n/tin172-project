@@ -46,6 +46,9 @@ main = defaultMainWithOpts
         , testCase "validateObjectTest3" validateObjectTest3
         , testCase "validateObjectTest4" validateObjectTest4
         , testCase "validateObjectTest5" validateObjectTest5
+        , testCase "validateObjectTest6" validateObjectTest6
+        , testCase "validateObjectTest7" validateObjectTest7
+        , testCase "validateObjectTest8" validateObjectTest8
         ]
     ] mempty
 
@@ -168,20 +171,55 @@ validateObjectTest4 = assertBool "I managed to place a large plank on a small br
 -- | Checks that nothing can be placed on a ball
 validateObjectTest5 :: Assertion
 validateObjectTest5 = assertBool "I managed to place something on a ball"
-  $ and $ map not $ map f $ map xs ys
+  $ and $ map f $ map xs forms
     where
       f :: Object -> Bool
-      f = flip validate (Object Small White Ball)
+      f = not . flip validate (Object Small White Ball)
 
       xs :: Form -> Object
       xs x = (Object Large White x)
 
-      ys :: [Form]
-      ys = [Brick, Plank, Ball, Pyramid, Box, Table]
+-- | Checks if every large object cannot be placed on every small object
+validateObjectTest6 :: Assertion
+validateObjectTest6 = assertBool "I managed to place a large object on a small one"
+  $ and $ [(f l s) |  l <- map (oc Large) forms, s <- map (oc Small) forms]
+    where
+      f :: Object -> Object -> Bool
+      f lo so = not $ validate lo so
 
+      oc :: Size -> Form -> Object
+      oc sz frm = (Object sz White frm)
 
---Boxes cannot contain pyramids or planks of the same size
+-- | Boxes cannot contain pyramids or planks of the same size
+validateObjectTest7 :: Assertion
+validateObjectTest7 = assertBool "I managed to place a plank/pyramid inside a box"
+  $ and $ [(f p (oc Large Box)) | p <- map (oc Large) [Pyramid,Plank]]
+       ++ [(f p (oc Small Box)) | p <- map (oc Small) [Pyramid,Plank]]
+    where
+      f :: Object -> Object -> Bool
+      f po bo = not $ validate po bo
+
+      oc :: Size -> Form -> Object
+      oc sz frm = (Object sz White frm)
+
 --Boxes can only be supported by tables or planks of the same size, but large boxes can also be supported by large bricks
+validateObjectTest8 :: Assertion
+validateObjectTest8 = assertBool "I managed to place a box on something other than a table or plank (or large brick for large box)"
+  $ and $ [(f (oc Large Box) p) | p <- map (oc Large) [Table,Plank,Brick]]
+       ++ [(f (oc Small Box) p) | p <- map (oc Small) [Table,Plank]]
+       ++ [(not $ f (oc Small Box) p) | p <- map (oc Large) [Table,Plank,Brick]]
+       ++ [(not $ f (oc Large Box) p) | p <- map (oc Small) [Table,Plank]]
+    where
+      f :: Object -> Object -> Bool
+      f bo o = not $ validate bo o
+
+      oc :: Size -> Form -> Object
+      oc sz frm = (Object sz White frm)
+      
+
+-- | A list of all the given forms used to create all possible objects.
+forms :: [Form]
+forms = [Brick,Plank,Ball,Pyramid,Box,Table]
 
 largeWhiteBall :: Object
 largeWhiteBall = Object Large White Ball
