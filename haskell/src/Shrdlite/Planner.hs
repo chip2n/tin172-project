@@ -134,7 +134,22 @@ heuristics (state, goal) = case goal of
     Nothing -> case makeFloorSpace (world state) of
       Just steps -> minimum steps
       Nothing -> error $ "makeFloorSpace: can't make room for object: " ++ i
+  PutGoal rel (Obj i1) (Obj i2) -> case rel of
+    Ontop -> objAbove i2 (world state)
+    Inside -> objAbove i2 (world state)
+    _ -> error $ "TODO: impelement " ++ show rel ++ " in heuristics\n"
+              ++ "Trying to put " ++ i1 ++ " " ++ show rel ++ " " ++ i2
   PutGoal {} -> error "PutGoal while not hold an object isn't implemented yet."
+
+objAbove :: Id -> World -> Int
+objAbove _ [] = error "objects aren't in the world!"
+--objAbove i1 i2 (w:[]) = case L.elemIndex i2 w of
+--  Nothing -> error $ "Object: " ++ i1 ++ " & " ++ i2 ++ " aren't in " ++ show w
+--  Just index ->  (length w - index)
+--objAbove i1 i2 ws = error $ "Yolo: " ++ i1 ++ " " ++ i2 ++ " " ++ show ws
+objAbove i2 (w:ws) = case L.elemIndex i2 w of
+  Nothing -> objAbove i2 ws
+  Just index ->  index -- 2 * (length w - index)
 
 getFloorSpace :: World -> Maybe Int
 getFloorSpace [] = error "TODO: All floor spaces are taken"
@@ -143,12 +158,13 @@ getFloorSpace (_:ws) = case getFloorSpace ws of
   Just i -> return $ i+1
   Nothing -> error "TODO: ALl floor spaces are taken"
 
+-- TODO: Probably an incorrect interpretation of the number of steps.
 makeFloorSpace :: World -> Maybe [Int]
 makeFloorSpace [] = return []
 makeFloorSpace (w:ws) = do
   let l = length w
   ls <- makeFloorSpace ws
-  return (l:ls)
+  return $ 2 * l : ls
 
 idHeight :: Id -> World -> Maybe Int
 idHeight _ [] = error "object is not in the world"
@@ -160,6 +176,16 @@ idHeight i (w:ws) = case L.elemIndex i w of
   Nothing     -> idHeight i ws
   Just index  -> return $ ((length w) - 1) - index
 
+-- | Checks is the first object is above the second object in the world
+isAbove :: Id -> Id -> World -> Bool
+isAbove _ _ [] = False
+isAbove i1 i2 (w:ws) = case L.elemIndex i2 w of
+  Nothing -> isAbove i1 i2 ws
+  Just index -> let i = index + 1 
+                in if length w < i 
+                     then i1 == w !! i
+                     else False
+
 -- | Checks if the goal is fulfilled in the provided state
 check :: (State,Goal) -> Bool
 check (state, goal) = case goal of
@@ -170,6 +196,10 @@ check (state, goal) = case goal of
   PutGoal Ontop (Obj i) Flr -> case idHeight i (world state) of
     Just height -> height == 0
     Nothing -> False
+  PutGoal rel (Obj i1) (Obj i2) -> case rel of
+    Ontop -> isAbove i1 i2 (world state)
+    Inside -> isAbove i1 i2 (world state)
+    _ -> error $ "Not implemented yet: Trying to put " ++ i1 ++ " " ++ show rel ++ " of " ++ i2
   PutGoal {}      -> error "PutGoal not fully implemented yet"
 
 aStarSolve :: (State,Goal) -> Maybe [(State,Goal)]
