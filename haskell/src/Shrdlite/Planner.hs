@@ -2,8 +2,8 @@ module Shrdlite.Planner where
 
 import Shrdlite.Common
 import Shrdlite.Grammar
+import Shrdlite.AStar
 
-import Data.Graph.AStar
 import Data.Maybe
 import qualified Data.List as L
 import qualified Data.Map as M
@@ -13,11 +13,9 @@ import qualified Data.Set as S
 -- consist of messages to the user and commands in the form of
 -- "pick FLOOR_SPACE" and "drop FLOOR_SPACE"
 solve :: World -> Maybe Id -> Objects -> Goal -> Plan
-solve w h o goal = statePlan plan
+solve w h o goal = fromMaybe [] plan
   where
-    state = State { world=w, holding=h, objects=o}
-    solution = aStarSolve (state,goal)
-    plan = (state, goal) : (fromMaybe [] solution)
+    plan = aStar o (worldGraph o) (heuristics goal) (check goal) (w,h)
 
 {-
     [ "I totally picked it up . . ."
@@ -31,32 +29,28 @@ solve w h o goal = statePlan plan
 -}
 
 -- Given a state, this produces all possible neighbours
-stateGraph :: (State,Goal) -> S.Set (State,Goal)
-stateGraph (state, goal) = case holding state of
-  Just i  -> foldl (placeObject state goal i) S.empty worldParts -- TODO: foldl' or foldr instead
-  Nothing -> foldl (takeObject state goal) S.empty worldParts -- TODO: foldl' or foldr instead
+worldGraph :: Objects -> WorldHolding -> S.Set WorldHolding
+worldGraph o (w, h) = case h of
+  Just i  -> foldl (placeObject o i) S.empty worldParts -- TODO: foldl' or foldr instead
+  Nothing -> foldl (takeObject o) S.empty worldParts -- TODO: foldl' or foldr instead
   where
-    w = world state
     worldParts = init $ zip (L.inits w) (L.tails w) -- TODO: try highest column first, so sort the zipped lists
 
-placeObject :: State -> Goal -> Id -> S.Set (State, Goal) -> ([[Id]], [[Id]]) -> S.Set (State, Goal)
-placeObject state goal h s e = case newWorld h of
+placeObject :: Objects -> Id -> S.Set WorldHolding -> ([[Id]], [[Id]]) -> S.Set WorldHolding
+placeObject o h s e = case newWorld h of
   Nothing -> s
-  Just w -> S.insert newState s
-      where
-        newState = (state {holding=Nothing, world=w},goal)
+  Just w -> S.insert (w, Nothing) s
   where
-    newWorld elm = joinModified state e (\x -> x ++ [elm])
+    newWorld elm = joinModified o e (\x -> x ++ [elm])
 
-takeObject :: State -> Goal -> S.Set (State, Goal) -> ([[Id]], [[Id]]) -> S.Set (State, Goal)
-takeObject state goal s e = case takeHighest e of
+takeObject :: Objects -> S.Set WorldHolding -> ([[Id]], [[Id]]) -> S.Set WorldHolding
+takeObject o s e = case takeHighest e of
   Nothing -> s
-  Just i  -> S.insert (state {holding=Just i, world=newWorld},goal) s
+  Just i  -> S.insert (newWorld, Just i) s
   where
     --newWorld = fromJust $ joinModified state e maybeInit
-    newWorld = case joinModified state e maybeInit of
-      Nothing -> error "Error: Physical laws violated"
-      Just e' -> e'
+    newWorld = fromMaybe (error "Error: Physical laws violated")
+                         (joinModified o e maybeInit)
     maybeInit [] = []
     maybeInit xs = init xs
 
@@ -64,10 +58,10 @@ takeObject state goal s e = case takeHighest e of
 -- second list. The function is what modifies the element (which is itself a
 -- list) and is normally either placing or taking an object from the top of
 -- the list. Returns a new world
-joinModified :: State -> ([[Id]], [[Id]]) -> ([Id] -> [Id]) -> Maybe [[Id]]
+joinModified :: Objects -> ([[Id]], [[Id]]) -> ([Id] -> [Id]) -> Maybe [[Id]]
 joinModified _ ([], []) _ = Nothing
 joinModified _ (_, []) _ = Nothing
-joinModified state (xs, y:ys) f = case val state (f y) of
+joinModified objs (xs, y:ys) f = case val objs (f y) of
    Nothing -> Nothing
    Just y' -> Just $ xs ++ y':ys
 --if length y' > 1 && head y' == "c" && last y' == "b"
@@ -75,18 +69,17 @@ joinModified state (xs, y:ys) f = case val state (f y) of
 
 -- Taeks a column and checks if the the two topmost objects are in the correct
 -- order. If there are less than two object we assume there can be no conflicts.
-val :: State -> [Id] -> Maybe [Id]
-val state y' | length y' > 1 = case l y1 of
+val :: Objects -> [Id] -> Maybe [Id]
+val objs y' | length y' > 1 = case l y1 of
                   Nothing  -> Nothing
                   Just y1' -> case l y2 of
                      Nothing  -> Nothing
-                     Just y2' -> if (validate y1' y2')
+                     Just y2' -> if validate y1' y2'
                                  then Just y'
                                  else Nothing
              | otherwise = Just y'
       where l ys'  = M.lookup ys' objs
             [y1, y2] = take 2 $ reverse y'
-            objs = objects state
 
 -- Tests whether the first object can be placed immediately above the second
 -- object without violating the given constraints.
@@ -118,25 +111,25 @@ dist :: (State,Goal) -> (State,Goal) -> Int
 dist = const.const 1
 
 -- Heuristic defining how good a state is
-heuristics :: (State,Goal) -> Int
-heuristics (state, goal) = case goal of
+heuristics :: Goal -> WorldHolding -> Int
+heuristics goal (w, h) = case goal of
   TakeGoal Flr -> error "Take floor goal cannot be assessed"
-  TakeGoal (Obj i) -> case holding state of
+  TakeGoal (Obj i) -> case h of
     Nothing             -> fromMaybe (error "object is not in the world")
-                                   $ idHeight i (world state)
+                                   $ idHeight i w
     Just holdingId      ->
       if i == holdingId
       then 0
       else fromMaybe (error "object is not in the world")
-                   $ idHeight i (world state)
-  PutGoal Ontop (Obj i) Flr -> case getFloorSpace (world state) of
-    Just flrNum -> 1
-    Nothing -> case makeFloorSpace (world state) of
+                   $ idHeight i w
+  PutGoal Ontop (Obj i) Flr -> case getFloorSpace w of
+    Just _ -> 1
+    Nothing -> case makeFloorSpace w of
       Just steps -> minimum steps
       Nothing -> error $ "makeFloorSpace: can't make room for object: " ++ i
   PutGoal rel (Obj i1) (Obj i2) -> case rel of
-    Ontop -> fromMaybe (error ("i2: " ++ i2 ++ " world: " ++ show (world state))) $ objAbove i2 (world state)
-    Inside -> fromMaybe (error ("i2: " ++ i2 ++ " world: " ++ show (world state))) $ idHeight i2 (world state)
+    Ontop -> fromMaybe (error ("i2: " ++ i2 ++ " world: " ++ show w)) $ objAbove i2 w
+    Inside -> fromMaybe (error ("i2: " ++ i2 ++ " world: " ++ show w)) $ idHeight i2 w
     _ -> error $ "TODO: impelement " ++ show rel ++ " in heuristics\n"
               ++ "Trying to put " ++ i1 ++ " " ++ show rel ++ " " ++ i2
   PutGoal {} -> error "PutGoal while not hold an object isn't implemented yet."
@@ -170,10 +163,10 @@ idHeight :: Id -> World -> Maybe Int
 idHeight _ [] = error "object is not in the world"
 idHeight i (w:[]) = case L.elemIndex i w of
   Nothing    -> Nothing
-  Just index -> return $ ((length w) - 1) - index
+  Just index -> return $ (length w - 1) - index
 idHeight i (w:ws) = case L.elemIndex i w of
   Nothing     -> idHeight i ws
-  Just index  -> return $ ((length w) - 1) - index
+  Just index  -> return $ (length w - 1) - index
 
 objPos :: Id -> World -> Maybe Int
 objPos _ [] = Nothing
@@ -187,28 +180,23 @@ isAbove _ _ [] = False
 isAbove i1 i2 (w:ws) = case L.elemIndex i2 w of
   Nothing -> isAbove i1 i2 ws
   Just index -> let i = index + 1 
-                in if length w < i 
-                     then i1 == w !! i
-                     else False
+                in ((length w < i) && (i1 == w !! i))
 
 -- | Checks if the goal is fulfilled in the provided state
-check :: (State,Goal) -> Bool
-check (state, goal) = case goal of
-  TakeGoal (Flr)  -> error "Take floor goal cannot be assessed"
-  TakeGoal (Obj i)  -> case holding state of
+check :: Goal -> WorldHolding -> Bool
+check goal (w, h) = case goal of
+  TakeGoal Flr  -> error "Take floor goal cannot be assessed"
+  TakeGoal (Obj i)  -> case h of
     Nothing             -> False
     Just holdingId      -> i == holdingId
-  PutGoal Ontop (Obj i) Flr -> case objPos i (world state) of
+  PutGoal Ontop (Obj i) Flr -> case objPos i w of
     Just height -> height == 0
     Nothing -> False
   PutGoal rel (Obj i1) (Obj i2) -> case rel of
-    Ontop -> isAbove i1 i2 (world state)
-    Inside -> isAbove i1 i2 (world state)
+    Ontop -> isAbove i1 i2 w
+    Inside -> isAbove i1 i2 w
     _ -> error $ "Not implemented yet: Trying to put " ++ i1 ++ " " ++ show rel ++ " of " ++ i2
   PutGoal {}      -> error "PutGoal not fully implemented yet"
-
-aStarSolve :: (State,Goal) -> Maybe [(State,Goal)]
-aStarSolve = aStar stateGraph dist heuristics check
 
 statePlan :: [(State,Goal)] -> Plan
 statePlan []                 = []

@@ -17,7 +17,16 @@ data Goal = TakeGoal GoalObject
 data GoalObject = Flr | Obj Id deriving (Show, Eq, Ord)
 type Plan = [String]
 data State = State { world :: World, holding :: Maybe Id, objects :: Objects }
-  deriving (Eq, Ord, Show)
+  deriving (Show)
+type WorldHolding = (World, Maybe Id)
+type WorldChange = (Int, [Id]) -- The changed column id and the new column
+
+instance Eq State where
+  s1 == s2 = world s1 == world s2 && holding s1 == holding s2
+  s1 /= s2 = world s1 /= world s2 || holding s1 /= holding s2
+
+instance Ord State where
+  compare s1 s2 = compare (world s1) (world s2)
 
 -- |Finds the column and height of the object with the provided id
 findObjPos :: Id -> World -> Maybe (Int,Int)
