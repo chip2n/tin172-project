@@ -135,21 +135,20 @@ heuristics (state, goal) = case goal of
       Just steps -> minimum steps
       Nothing -> error $ "makeFloorSpace: can't make room for object: " ++ i
   PutGoal rel (Obj i1) (Obj i2) -> case rel of
-    Ontop -> objAbove i2 (world state)
-    Inside -> objAbove i2 (world state)
+    Ontop -> fromMaybe (error ("i2: " ++ i2 ++ " world: " ++ show (world state))) $ objAbove i2 (world state)
+    Inside -> fromMaybe (error ("i2: " ++ i2 ++ " world: " ++ show (world state))) $ idHeight i2 (world state)
     _ -> error $ "TODO: impelement " ++ show rel ++ " in heuristics\n"
               ++ "Trying to put " ++ i1 ++ " " ++ show rel ++ " " ++ i2
   PutGoal {} -> error "PutGoal while not hold an object isn't implemented yet."
 
-objAbove :: Id -> World -> Int
+objAbove :: Id -> World -> Maybe Int
 objAbove _ [] = error "objects aren't in the world!"
---objAbove i1 i2 (w:[]) = case L.elemIndex i2 w of
---  Nothing -> error $ "Object: " ++ i1 ++ " & " ++ i2 ++ " aren't in " ++ show w
---  Just index ->  (length w - index)
---objAbove i1 i2 ws = error $ "Yolo: " ++ i1 ++ " " ++ i2 ++ " " ++ show ws
+objAbove i2 (w:[]) = case L.elemIndex i2 w of
+  Nothing -> Nothing
+  Just index ->  return (length w - index)
 objAbove i2 (w:ws) = case L.elemIndex i2 w of
   Nothing -> objAbove i2 ws
-  Just index ->  index -- 2 * (length w - index)
+  Just index ->  return index -- 2 * (length w - 1 - index)
 
 getFloorSpace :: World -> Maybe Int
 getFloorSpace [] = Nothing
@@ -169,7 +168,6 @@ makeFloorSpace (w:ws) = do
 -- | Gives an int for how far down the object is
 idHeight :: Id -> World -> Maybe Int
 idHeight _ [] = error "object is not in the world"
---idHeight i (w:[]) = return $ ((length w) - 1) -(fromMaybe Nothing $ L.elemIndex i w)
 idHeight i (w:[]) = case L.elemIndex i w of
   Nothing    -> Nothing
   Just index -> return $ ((length w) - 1) - index
