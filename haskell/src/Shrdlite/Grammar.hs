@@ -15,7 +15,7 @@ data Location = Relative Relation Entity
 data Entity = Floor | BasicEntity Quantifier Object | RelativeEntity Quantifier Object Location
               deriving (Eq, Ord, Show)
 
-data Object = Object Size Color Form 
+data Object = Object Size Color Form
               deriving (Eq, Ord, Show)
 
 data Quantifier = The | Any | All
@@ -24,7 +24,7 @@ data Quantifier = The | Any | All
 data Relation = Beside | Leftof | Rightof | Above | Ontop | Under | Inside
                 deriving (Eq, Ord, Show)
 
-data Size = AnySize | Small | Large 
+data Size = AnySize | Small | Large
             deriving (Ord, Show)
 
 instance Eq Size where
@@ -65,7 +65,7 @@ instance Eq Form where
 -- Grammar rules
 
 command :: SParser Command
-command = mkCommand $ 
+command = mkCommand $
           Take <$> (takeVerb *> entity)
           <|>
           Put  <$> (moveVerb *> itPron *> location)
@@ -81,7 +81,7 @@ entity = Floor <$ theFloor
          numberAgreement (liftA2 BasicEntity <$> quantifier <*> object)
          <|>
          numberAgreement (liftA3 RelativeEntity <$> quantifier <*> object <*> relative_clause)
-    where 
+    where
       relative_clause n = thatIs n *> location
 
 object :: Number -> SParser Object
@@ -139,8 +139,8 @@ regNoun :: Number -> String -> String
 regNoun n s = mkNoun n s (s ++ "s")
 
 mkNoun :: Number -> String -> String -> String
-mkNoun Sg sg pl = sg
-mkNoun Pl sg pl = pl
+mkNoun Sg sg _ = sg
+mkNoun Pl _ pl = pl
 
 mkCommand :: SParser Command -> SParser Command
 mkCommand prs = lexicon [((), ["", "will you", "can you", "could you"])] *>

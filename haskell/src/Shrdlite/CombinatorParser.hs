@@ -1,9 +1,8 @@
 
 module Shrdlite.CombinatorParser (module Shrdlite.CombinatorParser, module Control.Applicative) where
 
-import Control.Monad
 import Control.Applicative
-
+import qualified Data.Foldable as F
 
 newtype Parser t a = Parser ([t] -> [([t], a)])
 
@@ -18,7 +17,7 @@ instance Applicative (Parser t) where
     Parser p <*> Parser q = Parser (\ts -> [(ts'', f a) | (ts', f) <- p ts, (ts'', a) <- q ts'])
 
 instance Alternative (Parser t) where
-    empty = Parser (\ts -> [])
+    empty = Parser (const [])
     Parser p <|> Parser q = Parser (\ts -> p ts ++ q ts)
 
 token :: Eq t => t -> Parser t t
@@ -29,11 +28,12 @@ token t = Parser (\ts -> case ts of
 -- Convenience parsers
 
 anyof :: [Parser t a] -> Parser t a
-anyof = foldr (<|>) empty
+anyof = F.asum
 
 tokens :: Eq t => [t] -> Parser t [t]
-tokens [] = pure []
-tokens (x:xs) = (:) <$> token x <*> tokens xs
+tokens = foldr (\ x -> (<*>) ((:) <$> token x)) (pure [])
+--tokens [] = pure []
+--tokens (x:xs) = (:) <$> token x <*> tokens xs
 
 lexicon :: [(a, [String])] -> Parser String a
 lexicon alts = anyof [a <$ anyof (map (tokens.words) alt) | (a, alt) <- alts]

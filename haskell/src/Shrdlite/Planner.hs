@@ -60,10 +60,6 @@ takeObject state goal s e = case takeHighest e of
     maybeInit [] = []
     maybeInit xs = init xs
 
--- Checks if a state is valid
-validState :: (State, Goal) -> Bool
-validState _ = True -- TODO: actually check :)
-
 -- Joins two parts of the world together, modifying the first element in the
 -- second list. The function is what modifies the element (which is itself a
 -- list) and is normally either placing or taking an object from the top of
@@ -103,7 +99,7 @@ validate (Object s1     _ Plank)   (Object s2    _ Box)   = s1 < s2
 validate (Object s1     _ Box)     (Object s2    _ Plank) = s1 == s2
 validate (Object s1     _ Box)     (Object s2    _ Table) = s1 == s2
 validate (Object Large  _ Box)     (Object Large _ Brick) = True
-validate (Object s1     _ Box)     (Object s2    _ Box  ) = s1 < s2 -- TODO wrong?
+validate (Object s1     _ Box)     (Object s2    _ Box  ) = s1 < s2
 validate (Object _      _ Box)     _                      = False
 validate (Object s1     _ _)       (Object s2    _ _)     = s1 <= s2
 
@@ -180,17 +176,18 @@ aStarSolve :: (State,Goal) -> Maybe [(State,Goal)]
 aStarSolve = aStar stateGraph dist heuristics check
 
 statePlan :: [(State,Goal)] -> Plan
-statePlan ((_,_):[]) = []
+statePlan []                 = []
+statePlan ((_,_):[])         = []
 statePlan ((s1,_):(s2,g):xs) = stateTransition w1 w2 0 ++ statePlan ((s2,g):xs)
   where w1 = world s1
         w2 = world s2
 
 stateTransition :: World -> World -> Int -> Plan
-stateTransition [] [] _ = error "stateTransition: no changes"
 stateTransition (c1:c1s) (c2:c2s) col = case compare (length c1) (length c2) of
   LT -> ["drop " ++ show col]
   GT -> ["pick " ++ show col]
   EQ -> stateTransition c1s c2s (col + 1)
+stateTransition _ _ _ = error "stateTransition: no changes"
 
 -- | Checks which plans is the best one, according to some heuristic
 bestPlan :: [Plan] -> Plan
