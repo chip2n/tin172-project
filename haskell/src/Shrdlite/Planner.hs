@@ -152,11 +152,11 @@ objAbove i2 (w:ws) = case L.elemIndex i2 w of
   Just index ->  index -- 2 * (length w - index)
 
 getFloorSpace :: World -> Maybe Int
-getFloorSpace [] = error "TODO: All floor spaces are taken"
+getFloorSpace [] = Nothing
 getFloorSpace ([]:_) = return 0
 getFloorSpace (_:ws) = case getFloorSpace ws of
   Just i -> return $ i+1
-  Nothing -> error "TODO: ALl floor spaces are taken"
+  Nothing -> Nothing
 
 -- TODO: Probably an incorrect interpretation of the number of steps.
 makeFloorSpace :: World -> Maybe [Int]
@@ -166,6 +166,7 @@ makeFloorSpace (w:ws) = do
   ls <- makeFloorSpace ws
   return $ 2 * l : ls
 
+-- | Gives an int for how far down the object is
 idHeight :: Id -> World -> Maybe Int
 idHeight _ [] = error "object is not in the world"
 --idHeight i (w:[]) = return $ ((length w) - 1) -(fromMaybe Nothing $ L.elemIndex i w)
@@ -175,6 +176,12 @@ idHeight i (w:[]) = case L.elemIndex i w of
 idHeight i (w:ws) = case L.elemIndex i w of
   Nothing     -> idHeight i ws
   Just index  -> return $ ((length w) - 1) - index
+
+objPos :: Id -> World -> Maybe Int
+objPos _ [] = Nothing
+objPos i (w:ws) = case L.elemIndex i w of
+  Nothing -> objPos i ws
+  Just index -> return index
 
 -- | Checks is the first object is above the second object in the world
 isAbove :: Id -> Id -> World -> Bool
@@ -193,7 +200,7 @@ check (state, goal) = case goal of
   TakeGoal (Obj i)  -> case holding state of
     Nothing             -> False
     Just holdingId      -> i == holdingId
-  PutGoal Ontop (Obj i) Flr -> case idHeight i (world state) of
+  PutGoal Ontop (Obj i) Flr -> case objPos i (world state) of
     Just height -> height == 0
     Nothing -> False
   PutGoal rel (Obj i1) (Obj i2) -> case rel of
