@@ -124,8 +124,8 @@ dist = const.const 1
 -- Heuristic defining how good a state is
 heuristics :: (State,Goal) -> Int
 heuristics (state, goal) = case goal of
-  TakeGoal (Flr)  -> error "Take floor goal cannot be assessed"
-  TakeGoal (Obj i)  -> case holding state of
+  TakeGoal Flr -> error "Take floor goal cannot be assessed"
+  TakeGoal (Obj i) -> case holding state of
     Nothing             -> fromMaybe (error "object is not in the world")
                                    $ idHeight i (world state)
     Just holdingId      ->
@@ -133,10 +133,26 @@ heuristics (state, goal) = case goal of
       then 0
       else fromMaybe (error "object is not in the world")
                    $ idHeight i (world state)
-  PutGoal Ontop (Obj i) Flr -> case idHeight i (world state) of
-    Nothing -> error "TODO: create a function which checks for an empty floor spot." 
-    Just height -> height
-  PutGoal {}            -> error "PutGoal not implemented yet1"
+  PutGoal Ontop (Obj i) Flr -> case getFloorSpace (world state) of
+    Just flrNum -> 1
+    Nothing -> case makeFloorSpace (world state) of
+      Just steps -> minimum steps
+      Nothing -> error $ "makeFloorSpace: can't make room for object: " ++ i
+  PutGoal {} -> error "PutGoal while not hold an object isn't implemented yet."
+
+getFloorSpace :: World -> Maybe Int
+getFloorSpace [] = error "TODO: All floor spaces are taken"
+getFloorSpace ([]:_) = return 0
+getFloorSpace (_:ws) = case getFloorSpace ws of
+  Just i -> return $ i+1
+  Nothing -> error "TODO: ALl floor spaces are taken"
+
+makeFloorSpace :: World -> Maybe [Int]
+makeFloorSpace [] = return []
+makeFloorSpace (w:ws) = do
+  let l = length w
+  ls <- makeFloorSpace ws
+  return (l:ls)
 
 idHeight :: Id -> World -> Maybe Int
 idHeight _ [] = error "object is not in the world"
