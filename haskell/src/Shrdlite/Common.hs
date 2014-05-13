@@ -35,10 +35,11 @@ parseObjects obj = M.fromList $ map parseValue $ fromJSObject obj
 parseValue :: (Id, JSValue) -> (Id, Object)
 parseValue (s, JSObject val) = (s, obj)
  where
-    objForm = head $ parse form' $ [ok (valFromObj "form" val) :: String]
-    objSize = head $ parse size $ [ok (valFromObj "size" val) :: String]
-    objColor = head $ parse color $ [ok (valFromObj "color" val) :: String]
+    objForm = head $ parse form' [ok (valFromObj "form" val) :: String]
+    objSize = head $ parse size [ok (valFromObj "size" val) :: String]
+    objColor = head $ parse color [ok (valFromObj "color" val) :: String]
     obj = Object objSize objColor objForm
+parseValue (_, _) = error "Wow, did you screw up"
 
 form' :: SParser Form
 form' = lexicon [(Brick,   ["brick"]),
