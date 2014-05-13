@@ -123,30 +123,41 @@ dist = const.const 1
 -- Heuristic defining how good a state is
 heuristics :: (State,Goal) -> Int
 heuristics (state, goal) = case goal of
-  TakeGoal (Flr _)  -> error "Take floor goal cannot be assessed"
+  TakeGoal (Flr)  -> error "Take floor goal cannot be assessed"
   TakeGoal (Obj i)  -> case holding state of
-    Nothing             -> idHeight i (world state)
+    Nothing             -> fromMaybe (error "object is not in the world")
+                                   $ idHeight i (world state)
     Just holdingId      ->
       if i == holdingId
       then 0
-      else idHeight i (world state)
-  PutGoal {}        -> error "PutGoal not implemented yet"
+      else fromMaybe (error "object is not in the world")
+                   $ idHeight i (world state)
+  PutGoal Ontop (Obj i) Flr -> case idHeight i (world state) of
+    Nothing -> error "TODO: create a function which checks for an empty floor spot." 
+    Just height -> height
+  PutGoal {}            -> error "PutGoal not implemented yet1"
 
-idHeight :: Id -> World -> Int
+idHeight :: Id -> World -> Maybe Int
 idHeight _ [] = error "object is not in the world"
-idHeight i (w:[]) = ((length w) - 1) -(fromJust $ L.elemIndex i w)
+--idHeight i (w:[]) = return $ ((length w) - 1) -(fromMaybe Nothing $ L.elemIndex i w)
+idHeight i (w:[]) = case L.elemIndex i w of
+  Nothing    -> Nothing
+  Just index -> return $ ((length w) - 1) - index
 idHeight i (w:ws) = case L.elemIndex i w of
   Nothing     -> idHeight i ws
-  Just index  -> ((length w) - 1) - index
+  Just index  -> return $ ((length w) - 1) - index
 
 -- | Checks if the goal is fulfilled in the provided state
 check :: (State,Goal) -> Bool
 check (state, goal) = case goal of
-  TakeGoal (Flr _)  -> error "Take floor goal cannot be assessed"
+  TakeGoal (Flr)  -> error "Take floor goal cannot be assessed"
   TakeGoal (Obj i)  -> case holding state of
     Nothing             -> False
     Just holdingId      -> i == holdingId
-  PutGoal {}        -> error "PutGoal not implemented yet"
+  PutGoal Ontop (Obj i) Flr -> case idHeight i (world state) of
+    Just height -> height == 0
+    Nothing -> False
+  PutGoal {}      -> error "PutGoal not fully implemented yet"
 
 aStarSolve :: (State,Goal) -> Maybe [(State,Goal)]
 aStarSolve = aStar stateGraph dist heuristics check

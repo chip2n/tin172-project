@@ -14,7 +14,7 @@ type Objects = M.Map Id Object
 data Goal = TakeGoal GoalObject
           | PutGoal Relation GoalObject GoalObject
           deriving (Show, Eq, Ord)
-data GoalObject = Flr Int | Obj Id deriving (Show, Eq, Ord)
+data GoalObject = Flr | Obj Id deriving (Show, Eq, Ord)
 type Plan = [String]
 data State = State { world :: World, holding :: Maybe Id, objects :: Objects }
   deriving (Eq, Ord, Show)

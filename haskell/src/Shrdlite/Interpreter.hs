@@ -34,6 +34,9 @@ interpret state (Put (Relative relation entity)) =
             case matchingObjects q obj (Just loc) of
                 Right found -> map (\(i,_) -> PutGoal relation (Obj hold) (Obj i)) found
                 Left _     -> error "Ambiguity error - searchObjects returned Left."
+        Floor -> case holding state of
+                   Just id -> return (PutGoal Ontop (Obj id) Flr)
+                   Nothing -> error "You're not holding anything."
   where hold = fromJust (holding state)
         matchingObjects q obj l = searchObjects state obj q l
 interpret state (Move entity location) = error "interpret: Move TBD"
