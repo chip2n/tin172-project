@@ -103,6 +103,7 @@ validate (Object s1     _ Plank)   (Object s2    _ Box)   = s1 < s2
 validate (Object s1     _ Box)     (Object s2    _ Plank) = s1 == s2
 validate (Object s1     _ Box)     (Object s2    _ Table) = s1 == s2
 validate (Object Large  _ Box)     (Object Large _ Brick) = True
+validate (Object s1     _ Box)     (Object s2    _ Box  ) = s1 < s2 -- TODO wrong?
 validate (Object _      _ Box)     _                      = False
 validate (Object s1     _ _)       (Object s2    _ _)     = s1 <= s2
 
