@@ -21,7 +21,8 @@
 
 \section*{Background}
 The group decided to work with an agile workflow and to use git for versioning.
-With this kind of workflow will the work be focused on the take utterance.
+With this kind of workflow did the work focus on the one utterance at a time.
+This helped the group to work in different part of the code without conflicts.
 
 As of now the assumptions the group have made about the problems that could
 occur are only two problems so far. Firstly an utterance asking to pick up the
@@ -33,8 +34,13 @@ without some secondary objective (such as putting them all in boxes) will be
 impossible since we cannot hold more than a single object at a time.
 
 \section*{Parser}
-The parser is currently unchanged. We intend to extend it with the negation
-command as mentioned below.
+%Refactored the project and added a test which currently fails // Andreas
+%instance Eq Size instead of deriving
+The group started of by creating instances for Eq-class for the different types
+such as Size, Color and Form. This was done to add the possiblity for the value
+any- size, color or form and also to simplify the search process.
+%The parser is currently unchanged. We intend to extend it with the negation
+%command as mentioned below.
 
 \section*{Interpreter}
 The interpreter will be working with the world to find objects that match the
