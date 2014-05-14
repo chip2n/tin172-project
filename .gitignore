@@ -7,3 +7,5 @@
 *.swp
 *.swo
 __pycache__
+report/*
+!report/*.tex
