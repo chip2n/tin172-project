@@ -112,31 +112,45 @@ dist = const.const 1
 
 -- Heuristic defining how good a state is
 heuristics :: Goal -> WorldHolding -> Int
-heuristics goal (w, h) = case goal of
-  TakeGoal Flr -> error "Take floor goal cannot be assessed"
-  TakeGoal (Obj i) -> case h of
-    Nothing             -> fromMaybe (error "object is not in the world")
+heuristics (TakeGoal obj) (w, h) = case obj of
+  Flr -> error "Take floor goal cannot be assessed"
+  (Obj i) -> case h of
+    Nothing             -> fromMaybe (error "object is not in the world2")
                                    $ idHeight i w
     Just holdingId      ->
       if i == holdingId
       then 0
       else fromMaybe (error "object is not in the world")
                    $ idHeight i w
-  PutGoal Ontop (Obj i) Flr -> case getFloorSpace w of
-    Just _ -> 1
-    Nothing -> case makeFloorSpace w of
-      Just steps -> minimum steps
-      Nothing -> error $ "makeFloorSpace: can't make room for object: " ++ i
-  PutGoal rel (Obj i1) (Obj i2) -> case rel of
-    Ontop ->  let h1 = fromMaybe 0 $ idHeight i1 w
-                  h2 = fromMaybe 0 $ idHeight i2 w
-              in h1 + h2
-    Inside -> let h1 = fromMaybe 0 $ idHeight i1 w
-                  h2 = fromMaybe 0 $ idHeight i2 w
-              in h1 + h2
-    _ -> error $ "TODO: impelement " ++ show rel ++ " in heuristics\n"
-              ++ "Trying to put " ++ i1 ++ " " ++ show rel ++ " " ++ i2
-  PutGoal {} -> error "PutGoal while not hold an object isn't implemented yet."
+heuristics (PutGoal Ontop (Obj i) Flr) (w,_) = case getFloorSpace w of
+  Just _ -> 1
+  Nothing -> case makeFloorSpace w of
+    Just steps -> minimum steps
+    Nothing -> error $ "makeFloorSpace: can't make room for object: " ++ i
+heuristics (PutGoal rel (Obj i1) (Obj i2)) (w,_) = case rel of
+  Ontop ->  let h1 = fromMaybe 0 $ idHeight i1 w
+                h2 = fromMaybe 0 $ idHeight i2 w
+            in h1 + h2
+  Inside -> let h1 = fromMaybe 0 $ idHeight i1 w
+                h2 = fromMaybe 0 $ idHeight i2 w
+            in h1 + h2
+  Beside -> cheapestCost i1 i2 w
+  Leftof -> cheapestCost i1 i2 w
+  Rightof -> cheapestCost i1 i2 w
+  Above -> cheapestCost i1 i2 w
+  Under -> cheapestCost i1 i2 w
+  --_ -> error $ "TODO: impelement " ++ show rel ++ " in heuristics\n"
+  --          ++ "Trying to put " ++ i1 ++ " " ++ show rel ++ " " ++ i2
+--heuristic (PutGoal {}) _ = error "PutGoal while not hold an object isn't implemented yet."
+
+cheapestCost :: Id -> Id -> World -> Int
+cheapestCost i1 i2 w = (*) 2 $ minimum [length l1 - h1,length l2 - h2]
+  where c1 = fromMaybe 1 $ clmn 0 i1 w
+        c2 = fromMaybe 1 $ clmn 0 i2 w
+        l1 = w !! c1
+        l2 = w !! c2
+        h1 = fromMaybe 0 $ idHeight' i1 l1
+        h2 = fromMaybe 0 $ idHeight' i2 l2
 
 objAbove :: Id -> World -> Maybe Int
 objAbove _ [] = error "objects aren't in the world!"
@@ -159,15 +173,26 @@ makeFloorSpace :: World -> Maybe [Int]
 makeFloorSpace [] = return []
 makeFloorSpace (w:ws) = makeFloorSpace ws >>= \ls -> return $ 2 * length w : ls
 
+clmn :: Int -> Id -> World -> Maybe Int
+clmn _ _ [] = Nothing
+clmn row i (w:ws) = case L.elemIndex i w of
+                      Nothing -> clmn (row+1) i ws
+                      Just _  -> return row
+
 -- | Gives an int for how far down the object is
 idHeight :: Id -> World -> Maybe Int
-idHeight _ [] = error "object is not in the world"
-idHeight i (w:[]) = case L.elemIndex i w of
-  Nothing    -> Nothing
-  Just index -> return $ (length w - 1) - index
-idHeight i (w:ws) = case L.elemIndex i w of
-  Nothing     -> idHeight i ws
-  Just index  -> return $ (length w - 1) - index
+idHeight _ [] = Nothing
+idHeight i (w:ws) = case idHeight' i w of
+  Nothing -> idHeight i ws
+  mVal    -> mVal
+--idHeight i (w:ws) = case L.elemIndex i w of
+--  Nothing     -> idHeight i ws
+--  Just index  -> return $ (length w - 1) - index
+
+idHeight' :: Id -> [Id] -> Maybe Int
+idHeight' i ws = case L.elemIndex i ws of
+  Nothing -> Nothing
+  Just index -> return $ (length ws - 1) - index
 
 objPos :: Id -> World -> Maybe Int
 objPos _ [] = Nothing
@@ -185,14 +210,15 @@ isAbove i1 i2 (w:ws) = case L.elemIndex i2 w of
                   && (i1 == w !! i)) -- Is i1 above i2?
 
 -- | Checks if the first object is over the second, with some maximum distance
-isOver :: Id -> Id -> Int -> World -> Bool
+isOver :: Id -> Id -> Bool -> World -> Bool
 isOver _ _ _ [] = False
-isOver i1 i2 distance (w:ws) = case L.elemIndex i1 w of
-  Nothing     -> isOver i1 i2 distance ws
+isOver i1 i2 above (w:ws) = case L.elemIndex i1 w of
+  Nothing     -> isOver i1 i2 above ws
   Just index1 -> case L.elemIndex i2 w of
     Nothing     -> False
     Just index2 -> let d = index1 - index2
-                   in d > 0 && d <= distance
+                   in if above then d == 1
+                               else d > 0
 
 -- | Checks if the goal is fulfilled in the provided state
 check :: Goal -> WorldHolding -> Bool
@@ -205,10 +231,30 @@ check goal (w, h) = case goal of
     Just height -> height == 0
     Nothing -> False
   PutGoal rel (Obj i1) (Obj i2) -> case rel of
-    Ontop -> isOver i1 i2 1 w
-    Inside -> isOver i1 i2 1 w
-    _ -> error $ "Not implemented yet: Trying to put " ++ i1 ++ " " ++ show rel ++ " of " ++ i2
+    Ontop -> isOver i1 i2 True w
+    Inside -> isOver i1 i2 True w
+    Beside -> isBeside i1 i2 w
+    Leftof -> let c1 = fromMaybe (-1) $ clmn 0 i1 w
+                  c2 = fromMaybe (-1) $ clmn 0 i2 w
+              in (c1 /= (-1) && c2 /= (-1)) && c1 < c2
+    Rightof -> let c1 = fromMaybe (-1) $ clmn 0 i1 w
+                   c2 = fromMaybe (-1) $ clmn 0 i2 w
+               in ((c1 /= (-1) && c2 /= (-1)) && c1 > c2)
+    Above -> isOver i1 i2 False w
+    Under -> isOver i2 i1 False w
+    --_ -> error $ "Not implemented yet: Trying to put " ++ i1 ++ " " ++ show rel ++ " of " ++ i2
   PutGoal {}      -> error "PutGoal not fully implemented yet"
+
+-- TODO: Might want to check same height
+isBeside :: Id -> Id -> World -> Bool
+isBeside _ _ [] = False
+isBeside _ _ [_] = False
+isBeside i1 i2 (w:v:ws) = if isHere i1 i2 w
+                            then isHere i1 i2 v
+                            else isBeside i1 i2 (v:ws)
+  where
+    isHere _ _ [] = False
+    isHere i j (o:os) = (i == o || j == o) || isHere i j os
 
 statePlan :: [(State,Goal)] -> Plan
 statePlan []                 = []
