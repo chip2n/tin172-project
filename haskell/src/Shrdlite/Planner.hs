@@ -134,16 +134,23 @@ heuristics goal (w, h) = case goal of
     Inside -> let h1 = fromMaybe 0 $ idHeight i1 w
                   h2 = fromMaybe 0 $ idHeight i2 w
               in h1 + h2
-    Beside -> let c1 = fromMaybe 1 $ clmn 0 i1 w
-                  c2 = fromMaybe 1 $ clmn 0 i2 w
-                  l1 = w !! c1
-                  l2 = w !! c2
-                  h1 = fromMaybe 0 $ idHeight' i1 l1
-                  h2 = fromMaybe 0 $ idHeight' i2 l2
-              in (*) 2 $ minimum [length l2 - h2,length l1 - h1] 
+    Beside -> sideWayCost i1 i2 w
+    Leftof -> sideWayCost i1 i2 w
+    Rightof -> sideWayCost i1 i2 w
+    --Above -> 
+    --Under -> 
     _ -> error $ "TODO: impelement " ++ show rel ++ " in heuristics\n"
               ++ "Trying to put " ++ i1 ++ " " ++ show rel ++ " " ++ i2
   PutGoal {} -> error "PutGoal while not hold an object isn't implemented yet."
+
+sideWayCost :: Id -> Id -> World -> Int
+sideWayCost i1 i2 w = (*) 2 $ minimum [length l1 - h1,length l2 - h2]
+  where c1 = fromMaybe 1 $ clmn 0 i1 w
+        c2 = fromMaybe 1 $ clmn 0 i2 w
+        l1 = w !! c1
+        l2 = w !! c2
+        h1 = fromMaybe 0 $ idHeight' i1 l1
+        h2 = fromMaybe 0 $ idHeight' i2 l2
 
 objAbove :: Id -> World -> Maybe Int
 objAbove _ [] = error "objects aren't in the world!"
@@ -226,6 +233,14 @@ check goal (w, h) = case goal of
     Ontop -> isOver i1 i2 1 w
     Inside -> isOver i1 i2 1 w
     Beside -> isBeside i1 i2 w
+    Leftof -> let c1 = fromMaybe (-1) $ clmn 0 i1 w
+                  c2 = fromMaybe (-1) $ clmn 0 i2 w
+              in (c1 /= (-1) && c2 /= (-1)) && c1 < c2
+    Rightof -> let c1 = fromMaybe (-1) $ clmn 0 i1 w
+                   c2 = fromMaybe (-1) $ clmn 0 i2 w
+               in ((c1 /= (-1) && c2 /= (-1)) && c1 > c2)
+    --Above -> 
+    --Under -> 
     _ -> error $ "Not implemented yet: Trying to put " ++ i1 ++ " " ++ show rel ++ " of " ++ i2
   PutGoal {}      -> error "PutGoal not fully implemented yet"
 
