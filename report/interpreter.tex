@@ -3,3 +3,34 @@ The interpreter will be working with the world to find objects that match the
 criteria such that the planner only works with the objects id and not the
 objects description.
 
+The implementation of the interpreter began by writing a suitable type for it. We knew that the interpreter needs to have access to some kind of world state, which it will search for objects. And the goal of the interpreter is to interpret a user command into a list of possible interpretations for the planner. So, we created the following types:
+
+\begin{lstlisting}[language=haskell]
+data State = State { world :: World
+                   , holding :: Maybe Id
+                   , objects :: Objects }
+
+type World = [[Id]]
+
+data Goal = TakeGoal GoalObject
+          | PutGoal Relation GoalObject GoalObject
+
+data GoalObject = Flr | Obj Id deriving (Show, Eq, Ord)
+\end{lstlisting}
+Using these types, we could write the interpretation type signature as follows:
+
+\begin{lstlisting}[language=haskell]
+interpret :: State -> Command -> [Goal]
+\end{lstlisting}
+
+The implementation of interpret started with the realization that we needed a way to find objects in the world based on their appearance. In order to do this, we started fleshing out simple search functions, so that we can construct PDDL goals that references object IDs. The plan was that if we find multiple matching objects, we can either return one of them, or return an ambiguity error - depending on the user utterance.
+
+\begin{lstlisting}[language=haskell]
+searchObjects :: State -> Object -> Quantifier ->
+                 Maybe Location ->
+                 Either [[(Id, Object)]] [(Id, Object)]
+
+locationHolds :: State -> (Id, Object) -> Location -> Bool
+\end{lstlisting}
+
+The searchObjects function takes the world state, an Object (which is a description of the object's appearance), a quantifier (from the utterance) and an optional relative location. It returns either an ambiguity error (Left) bundled with all the possible matches, or a list of all the correctly matched items. In order to handle locations correctly, we needed the locationHolds function, which basically checks if a location is valid for the provided object in the provided world. Both were relativelt straight forward to implement, although it should be noted that a few bugs were discovered during the test writing.
