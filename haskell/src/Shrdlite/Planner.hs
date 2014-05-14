@@ -128,8 +128,12 @@ heuristics goal (w, h) = case goal of
       Just steps -> minimum steps
       Nothing -> error $ "makeFloorSpace: can't make room for object: " ++ i
   PutGoal rel (Obj i1) (Obj i2) -> case rel of
-    Ontop -> fromMaybe (error ("i2: " ++ i2 ++ " world: " ++ show w)) $ objAbove i2 w
-    Inside -> fromMaybe (error ("i2: " ++ i2 ++ " world: " ++ show w)) $ idHeight i2 w
+    Ontop ->  let h1 = fromMaybe 0 $ idHeight i1 w
+                  h2 = fromMaybe 0 $ idHeight i2 w
+              in h1 + h2
+    Inside -> let h1 = fromMaybe 0 $ idHeight i1 w
+                  h2 = fromMaybe 0 $ idHeight i2 w
+              in h1 + h2
     _ -> error $ "TODO: impelement " ++ show rel ++ " in heuristics\n"
               ++ "Trying to put " ++ i1 ++ " " ++ show rel ++ " " ++ i2
   PutGoal {} -> error "PutGoal while not hold an object isn't implemented yet."
@@ -179,8 +183,19 @@ isAbove :: Id -> Id -> World -> Bool
 isAbove _ _ [] = False
 isAbove i1 i2 (w:ws) = case L.elemIndex i2 w of
   Nothing -> isAbove i1 i2 ws
-  Just index -> let i = index + 1 
-                in ((length w < i) && (i1 == w !! i))
+  Just index -> let i = index + 1 -- Index above i2, where i1 should be
+                in ((length w > i) -- Only look of i2 if list is long enough
+                  && (i1 == w !! i)) -- Is i1 above i2?
+
+-- | Checks if the first object is over the second, with some maximum distance
+isOver :: Id -> Id -> Int -> World -> Bool
+isOver _ _ _ [] = False
+isOver i1 i2 distance (w:ws) = case L.elemIndex i1 w of
+  Nothing     -> isOver i1 i2 distance ws
+  Just index1 -> case L.elemIndex i2 w of
+    Nothing     -> False
+    Just index2 -> let d = index1 - index2
+                   in d > 0 && d <= distance
 
 -- | Checks if the goal is fulfilled in the provided state
 check :: Goal -> WorldHolding -> Bool
@@ -193,8 +208,8 @@ check goal (w, h) = case goal of
     Just height -> height == 0
     Nothing -> False
   PutGoal rel (Obj i1) (Obj i2) -> case rel of
-    Ontop -> isAbove i1 i2 w
-    Inside -> isAbove i1 i2 w
+    Ontop -> isOver i1 i2 1 w
+    Inside -> isOver i1 i2 1 w
     _ -> error $ "Not implemented yet: Trying to put " ++ i1 ++ " " ++ show rel ++ " of " ++ i2
   PutGoal {}      -> error "PutGoal not fully implemented yet"
 
