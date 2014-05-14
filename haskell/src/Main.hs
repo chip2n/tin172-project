@@ -8,12 +8,12 @@ module Main where
 import Shrdlite.Grammar
 import Shrdlite.CombinatorParser
 import Text.JSON
-import Data.List (elemIndex)
-import Data.Maybe
-import Control.Monad
-import qualified Data.Map as M
-import qualified Data.Set as S
-import Data.Graph.AStar
+--import Data.List (elemIndex)
+--import Data.Maybe
+--import Control.Monad
+--import qualified Data.Map as M
+--import qualified Data.Set as S
+--import Data.Graph.AStar
 
 -- Our own modules
 import Shrdlite.Planner as Planner
