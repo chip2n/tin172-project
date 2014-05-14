@@ -33,31 +33,13 @@ Secondly the utterance requesting to take (pick up) multiple objects
 without some secondary objective (such as putting them all in boxes) will be
 impossible since we cannot hold more than a single object at a time.
 
-\section*{Parser}
-%Refactored the project and added a test which currently fails // Andreas
-%instance Eq Size instead of deriving
-The group started of by creating instances for Eq-class for the different types
-such as Size, Color and Form. This was done to add the possiblity for the value
-any- size, color or form and also to simplify the search process.
-%The parser is currently unchanged. We intend to extend it with the negation
-%command as mentioned below.
+\input{./parser.tex}
 
-\section*{Interpreter}
-The interpreter will be working with the world to find objects that match the
-criteria such that the planner only works with the objects id and not the
-objects description.
+\input{./interpreter.tex}
 
-\section*{Ambiguity resolver}
-The current ambiguity resolver i very simple. It just checks the number of
-possible interpretations. If we only have one it passes it through, otherwise
-it simply rejects the command.
+\input{./ambiguity.tex}
 
-\section*{Planner}
-The planner is basically untouched as of yet. We have been working mostly on
-the interpreter and ambiguity resolver. It can currently only partially execute
-the take command. It can find the correct column where the requested object
-lies but only picks up the top object in that column.
-
+\input{./planner.tex}
 
 \section*{Extensions}
 \begin{itemize}
