@@ -1,21 +1,57 @@
-\documentclass[a4paper]{article}
-\usepackage{fancyhdr}
-\usepackage[utf8]{inputenc}
-\usepackage{mathtools}
+\documentclass[11pt]{article}
+\usepackage{eacl2014}
+\usepackage{times}
+\usepackage{url}
+\usepackage{latexsym}
+\usepackage{color}
 \usepackage{listings}
+\special{papersize=210mm,297mm}
 
-\pagestyle{fancy}
+\definecolor{Brown}{cmyk}{0,0.81,1,0.60}
+\definecolor{OliveGreen}{cmyk}{0.64,0,0.95,0.40}
+\definecolor{CadetBlue}{cmyk}{0.62,0.57,0.23,0}
+\definecolor{lightlightgray}{gray}{0.9}
 
-\rhead{tin172}
-\chead{}
-\lhead{group 2}
+\lstset{
+    language=haskell,                       % Code langugage
+    basicstyle=\footnotesize\ttfamily,                   % Code font, Examples: \footnotesize, \ttfamily
+    keywordstyle=\color{OliveGreen},        % Keywords font ('*' = uppercase)
+    commentstyle=\color{gray},              % Comments font
+    backgroundcolor=\color{lightlightgray}, % Choose background color
+    frame=single,
+    tabsize=2,                              % Default tab size
+    captionpos=b,                           % Caption-position = bottom
+    breaklines=true,                        % Automatic line breaking?
+    breakatwhitespace=false,                % Automatic breaks only at whitespace?
+    showspaces=false,                       % Dont make spaces visible
+    showtabs=false,                         % Dont make tabls visible
+    framesep=3pt,
+    xleftmargin=3pt,
+    xrightmargin=3pt
+}
+
+%\documentclass[a4paper]{article}
+%\usepackage{fancyhdr}
+%\usepackage[utf8]{inputenc}
+%\usepackage{mathtools}
+
 
 \title{Artificial Intelligence Project}
+\author{Andreas Arvidsson \\
+  {\tt andarv@student.chalmers.se} \\
+  Sebastian Lagerman \\
+  {\tt seblag@student.chalmers.se} \\
+  Johan Swetz\'{e}n \\
+  {\tt @student.chalmers.se} \\
+  Robin Touche \\
+  {\tt robint@student.chalmers.se} \\}
+
 \date{}
-\author{Andreas Arvidsson (911021--3718) \\
-        Sebastian Lagerman (890608--5017) \\
-        Johan Swetz\'{e}n (890916--5576) \\
-        Robin Touche (900610--3270)}
+
+%\author{Andreas Arvidsson (911021--3718) \\
+%        Sebastian Lagerman (890608--5017) \\
+%        Johan Swetz\'{e}n (890916--5576) \\
+%        Robin Touche (900610--3270)}
 
 \begin{document}
 \maketitle

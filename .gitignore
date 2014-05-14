@@ -9,3 +9,4 @@
 __pycache__
 report/*
 !report/*.tex
+!report/eacl2014.sty

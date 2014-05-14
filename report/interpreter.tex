@@ -15,20 +15,23 @@ type World = [[Id]]
 data Goal = TakeGoal GoalObject
           | PutGoal Relation GoalObject GoalObject
 
-data GoalObject = Flr | Obj Id deriving (Show, Eq, Ord)
+data GoalObject = Flr | Obj Id
 \end{lstlisting}
 Using these types, we could write the interpretation type signature as follows:
 
-\begin{lstlisting}[language=haskell]
+\begin{lstlisting}
 interpret :: State -> Command -> [Goal]
 \end{lstlisting}
 
 The implementation of interpret started with the realization that we needed a way to find objects in the world based on their appearance. In order to do this, we started fleshing out simple search functions, so that we can construct PDDL goals that references object IDs. The plan was that if we find multiple matching objects, we can either return one of them, or return an ambiguity error - depending on the user utterance.
 
-\begin{lstlisting}[language=haskell]
-searchObjects :: State -> Object -> Quantifier ->
-                 Maybe Location ->
-                 Either [[(Id, Object)]] [(Id, Object)]
+\begin{lstlisting}
+searchObjects ::
+  State ->
+  Object ->
+  Quantifier ->
+  Maybe Location ->
+  Either [[(Id,Object)]] [(Id,Object)]
 
 locationHolds :: State -> (Id, Object) -> Location -> Bool
 \end{lstlisting}
