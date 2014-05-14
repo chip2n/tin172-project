@@ -29,7 +29,7 @@ aStar o graph heur check start =
 aStar' :: (Ord c, Num c)
         => Objects        -- Objects in the world
         -> AStarState c -- Initial state
-        => (WorldHolding -> S.Set WorldHolding) -- Graph to search through
+        -> (WorldHolding -> S.Set WorldHolding) -- Graph to search through
         -> (WorldHolding -> c)       -- Heuristic distance to the goal
         -> (WorldHolding -> Bool)    -- Goal check function
         -> Maybe Plan -- Resulting path if it exists
