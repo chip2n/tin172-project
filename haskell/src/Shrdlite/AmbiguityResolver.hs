@@ -8,4 +8,5 @@ import Data.Maybe
 
 import Shrdlite.Common as Common
 
-
+resolveAmbiguity :: [Goal] -> Goal
+resolveAmbiguity = undefined
