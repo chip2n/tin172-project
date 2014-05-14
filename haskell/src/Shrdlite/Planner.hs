@@ -157,10 +157,7 @@ getFloorSpace (_:ws) = case getFloorSpace ws of
 -- TODO: Probably an incorrect interpretation of the number of steps.
 makeFloorSpace :: World -> Maybe [Int]
 makeFloorSpace [] = return []
-makeFloorSpace (w:ws) = do
-  let l = length w
-  ls <- makeFloorSpace ws
-  return $ 2 * l : ls
+makeFloorSpace (w:ws) = makeFloorSpace ws >>= \ls -> return $ 2 * length w : ls
 
 -- | Gives an int for how far down the object is
 idHeight :: Id -> World -> Maybe Int
