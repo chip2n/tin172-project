@@ -3,7 +3,32 @@
 \usepackage{times}
 \usepackage{url}
 \usepackage{latexsym}
+\usepackage{color}
+\usepackage{listings}
 \special{papersize=210mm,297mm}
+
+\definecolor{Brown}{cmyk}{0,0.81,1,0.60}
+\definecolor{OliveGreen}{cmyk}{0.64,0,0.95,0.40}
+\definecolor{CadetBlue}{cmyk}{0.62,0.57,0.23,0}
+\definecolor{lightlightgray}{gray}{0.9}
+
+\lstset{
+    language=haskell,                       % Code langugage
+    basicstyle=\footnotesize\ttfamily,                   % Code font, Examples: \footnotesize, \ttfamily
+    keywordstyle=\color{OliveGreen},        % Keywords font ('*' = uppercase)
+    commentstyle=\color{gray},              % Comments font
+    backgroundcolor=\color{lightlightgray}, % Choose background color
+    frame=single,
+    tabsize=2,                              % Default tab size
+    captionpos=b,                           % Caption-position = bottom
+    breaklines=true,                        % Automatic line breaking?
+    breakatwhitespace=false,                % Automatic breaks only at whitespace?
+    showspaces=false,                       % Dont make spaces visible
+    showtabs=false,                         % Dont make tabls visible
+    framesep=3pt,
+    xleftmargin=3pt,
+    xrightmargin=3pt
+}
 
 %\documentclass[a4paper]{article}
 %\usepackage{fancyhdr}
