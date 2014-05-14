@@ -12,10 +12,29 @@ import qualified Data.Set as S
 -- | Creates a list of moves which together creates a "Plan". The plan can
 -- consist of messages to the user and commands in the form of
 -- "pick FLOOR_SPACE" and "drop FLOOR_SPACE"
-solve :: World -> Maybe Id -> Objects -> Goal -> Plan
-solve w h o goal = fromMaybe [] plan
+solve :: World -> Maybe Id -> Objects -> [Goal] -> Plan
+solve _ _ _ []     = []
+solve w h o (g:[]) = fromMaybe [] plan
   where
-    plan = aStar o (worldGraph o) (heuristics goal) (check goal) (w,h)
+    plan = aStar o (worldGraph o) (heuristics g) (check g) (w,h)
+solve w h o (g:gs) = case plan of
+                        Nothing -> []
+                        Just p  ->  case newPlan of
+                           [] -> []
+                           p' -> p ++ p'
+                           where (newWorld, newHolding) = simulatePlan w h p
+                                 newPlan = solve newWorld newHolding o gs
+  where
+    plan = aStar o (worldGraph o) (heuristics g) (check g) (w,h)
+
+simulatePlan :: World -> Maybe Id -> Plan -> (World, Maybe Id)
+simulatePlan oldWorld h [] = (oldWorld, h)
+simulatePlan oldWorld (Just h) (p:ps) = simulatePlan newWorld Nothing ps
+   where (left, col:right) = L.splitAt (read (last (words p))::Int) oldWorld
+         newWorld = left ++ [col ++ [h]] ++ right
+simulatePlan oldWorld Nothing (p:ps) = simulatePlan newWorld (Just c) ps
+   where (left, (c:col):right) = L.splitAt (read (last (words p))::Int) oldWorld
+         newWorld = left ++ col:right
 
 {-
     [ "I totally picked it up . . ."

@@ -30,12 +30,12 @@ jsonMain jsinput = makeObj result
 
       trees     = parse command utterance :: [Command]
       goals     = concat . map (interpret state) $ trees
-      plan      = Planner.solve world holding objects (head goals) :: Plan
+      plan      = Planner.solve world holding objects goals :: Plan
 
       output
         | null trees        = "Parse error!"
         | null goals        = "Interpretation error!"
-        | length goals >= 2 = "Ambiguity error!"
+        -- | length goals >= 2 = "Ambiguity error!"
         | null plan         = "Planning error!"
         | otherwise         = "Much wow!"
 
@@ -45,9 +45,7 @@ jsonMain jsinput = makeObj result
                 ("goals",     if not (null trees)
                                 then showJSON (showGoals goals)
                                 else JSNull),
-                ("plan",      if length goals == 1
-                                then showJSON plan
-                                else JSNull),
+                ("plan",      showJSON plan),
                 ("output",    showJSON output),
                 ("receivedJSON", showJSON $ jsinput)
                ]

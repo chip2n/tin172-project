@@ -1,6 +1,7 @@
 module Shrdlite.Interpreter where
 
 import Shrdlite.Grammar
+import Shrdlite.Planner
 import qualified Data.Map as M
 import Control.Monad
 import Data.Maybe
@@ -39,7 +40,11 @@ interpret state (Put (Relative rel ent)) =
       Nothing    -> error "You're not holding anything."
   where hold = fromJust (holding state)
         matchingObjects q obj = searchObjects state obj q
-interpret _ (Move _ _) = error "interpret: Move TBD"
+interpret state (Move ent loc) = goals ++ interpret newState (Put loc)
+   where newState = state{world = newWorld, holding = newHolding}
+         (newWorld, newHolding) = simulatePlan (world state) (holding state) plan
+         plan = solve (world state) (holding state) (objects state) goals
+         goals = interpret state (Take ent)
 
 --PutGoal Relation GoalObject GoalObject
 
@@ -82,7 +87,7 @@ searchObjects state obj quant mloc =
 -- | Checks if a location holds for an object in the world.
 locationHolds :: State -> (Id, Object) -> Location -> Bool
 locationHolds state (ide, _) (Relative rel ent) =
-  case objPos of
+  case objPos' of
     Nothing     -> error "Cannot validate location for non-existent objects"
     Just (_, _) -> or $
       case rel of
@@ -94,7 +99,7 @@ locationHolds state (ide, _) (Relative rel ent) =
         Under   -> map (\eId -> sameColumn ide eId && under ide eId) entityIds
         Inside  -> map (\eId -> sameColumn ide eId && inside ide eId) entityIds
   where
-    objPos           = findObjPos ide (world state)
+    objPos'           = findObjPos ide (world state)
     entityIds        = case findEntity state ent of
                          Right objs -> objs
                          Left _     -> []
