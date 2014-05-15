@@ -1,31 +1,33 @@
 module Shrdlite.Interpreter where
 
 import Shrdlite.Grammar
-import Shrdlite.Planner
 import qualified Data.Map as M
 import Control.Monad
 import Data.Maybe
 import Data.Either
 import Control.Monad.Error
 import Control.Monad.Identity
---import Data.List
 
 import Shrdlite.Common as Common
 
 type Interpretation = ErrorT InterpretationError Identity
+unInterpret :: Interpretation a -> Either InterpretationError a
+unInterpret a = runIdentity $ runErrorT $ a
+
 data InterpretationError = EntityError String | AmbiguityError [Id] | OtherError String
   deriving (Show, Eq)
 
+isEntityError :: InterpretationError -> Bool
 isEntityError (EntityError _) = True
 isEntityError _               = False
 
+isAmbiguityError :: InterpretationError -> Bool
 isAmbiguityError (AmbiguityError _) = True
 isAmbiguityError _                  = False
 
+isOtherError :: InterpretationError -> Bool
 isOtherError (OtherError _) = True
 isOtherError _              = False
-
-
 
 instance Error InterpretationError where
     noMsg  = OtherError ""
@@ -34,72 +36,63 @@ instance Error InterpretationError where
 interpretAll :: State -> [Command] -> Either InterpretationError [[Goal]]
 interpretAll state cmds =
   case validInterpretations of
-    [] -> undefined
-    [a] -> Right [a]
+    []     -> undefined
+    [a]    -> Right [a]
     (a:as) -> Left $ AmbiguityError undefined
-    
   where interpretations = map (interpret state) cmds
         validInterpretations = rights interpretations
         ambiguityInterpretations = filter (\i -> isAmbiguityError i) (lefts interpretations)
 
-unInterpret :: Interpretation a -> Either InterpretationError a
-unInterpret a = runIdentity $ runErrorT $ a
-
 -- | Converts a parse tree into a PDDL representation of the final
 -- goal of the command
 interpret :: State -> Command -> Either InterpretationError [Goal]
-interpret state cmd = unInterpret $ interpret' state cmd
-  where interpret' :: State -> Command -> Interpretation [Goal]
-        interpret' state (Take ent)     = takeEntity state ent
-        interpret' state (Put loc)      = dropAtLocation state loc
-        interpret' state (Move ent loc) = moveEntity state ent (Just loc)
+interpret state cmd = unInterpret $ interpret' cmd
+  where interpret' (Take ent)     = takeEntity state ent
+        interpret' (Put loc)      = dropAtLocation state loc
+        interpret' (Move ent loc) = moveEntity state ent (Just loc)
 
 takeEntity :: State -> Entity -> Interpretation [Goal]
 takeEntity state ent =
   case ent of
     Floor                    -> throwError $ EntityError "Cannot take floor, ye rascal!"
     BasicEntity q obj        ->
-      case matchingObjects q obj Nothing of
+      case searchObjects state obj q Nothing of
         Right found -> return $     map (\(i,_) -> TakeGoal (Obj i)) found
         Left _      -> throwError $ AmbiguityError undefined
     RelativeEntity q obj loc -> 
-      case matchingObjects q obj (Just loc) of
+      case searchObjects state obj q (Just loc) of
         Right found -> return $ map (\(i,_) -> TakeGoal (Obj i)) found
         Left _      -> throwError $ AmbiguityError undefined
-  where matchingObjects q obj = searchObjects state obj q 
-
 
 dropAtLocation :: State -> Location -> Interpretation [Goal]
 dropAtLocation state (Relative rel ent) =
   case ent of
     Floor                    -> throwError $ EntityError "Cannot take floor, ye rascal!"
     BasicEntity q obj        ->
-      case matchingObjects q obj Nothing of
+      case searchObjects state obj q Nothing of
         Right found -> return $ map (\(i,_) -> MoveGoal rel (Obj hold) (Obj i)) found
         Left _      -> throwError $ AmbiguityError undefined
     RelativeEntity q obj loc -> 
-      case matchingObjects q obj (Just loc) of
+      case searchObjects state obj q (Just loc) of
         Right found -> return $ map (\(i,_) -> MoveGoal rel (Obj hold) (Obj i)) found
         Left _      -> throwError $ AmbiguityError undefined
-  where matchingObjects q obj = searchObjects state obj q 
-        hold = fromJust $ holding state
+  where hold = fromJust $ holding state
 
 moveEntity :: State -> Entity -> Maybe Location -> Interpretation [Goal]
 moveEntity state ent (Just (Relative rel ent2)) =
   case ent2 of
     BasicEntity q obj ->
-      case matchingObjects q obj Nothing of
+      case searchObjects state obj q Nothing of
         Right found -> return $ map (\(i,_) -> MoveGoal rel (Obj movingEntity) (Obj i)) found
         Left _      -> throwError $ AmbiguityError undefined
     RelativeEntity q obj loc -> 
-      case matchingObjects q obj (Just loc) of
+      case searchObjects state obj q (Just loc) of
         Right found -> return $ map (\(i,_) -> MoveGoal rel (Obj movingEntity) (Obj i)) found
         Left _      -> throwError $ AmbiguityError undefined
     Floor -> case holding state of
       Just ident -> return $ [MoveGoal Ontop (Obj ident) Flr]
       Nothing    -> throwError $ EntityError "You're not holding anything."
-  where matchingObjects q obj = searchObjects state obj q
-        Right movingEntity = findSingleEntity state ent --TODO: Handle ambiguity
+  where Right movingEntity = findSingleEntity state ent --TODO: Handle ambiguity
 
 -- | Searches the objects map after objects matching the quantifier and location.
 -- Returns Left at ambiguity error, and Right otherwise.
