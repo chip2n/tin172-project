@@ -134,13 +134,13 @@ heuristics :: Goal -> WorldHolding -> Int
 heuristics (TakeGoal obj) (w, h) = case obj of
   Flr -> error "Take floor goal cannot be assessed"
   (Obj i) -> case h of
-    Nothing             -> fromMaybe (error "object is not in the world2")
-                                   $ idHeight i w
+    Nothing             -> 1 + 2 * fromMaybe (error "object is not in the world2")
+                                   (idHeight i w)
     Just holdingId      ->
       if i == holdingId
       then 0
-      else fromMaybe (error "object is not in the world")
-                   $ idHeight i w
+      else 2 + 2 * fromMaybe (error "object is not in the world")
+                   (idHeight i w)
 heuristics (PutGoal Ontop (Obj i) Flr) (w,_) = case getFloorSpace w of
   Just _ -> 1
   Nothing -> case makeFloorSpace w of
