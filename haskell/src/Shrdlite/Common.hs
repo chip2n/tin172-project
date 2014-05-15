@@ -12,7 +12,7 @@ type World = [[Id]]
 --type Objects = JSObject JSValue
 type Objects = M.Map Id Object
 data Goal = TakeGoal GoalObject
-          | PutGoal Relation GoalObject GoalObject
+          | MoveGoal Relation GoalObject GoalObject
           deriving (Show, Eq, Ord)
 data GoalObject = Flr | Obj Id deriving (Show, Eq, Ord)
 type Plan = [String]
@@ -20,6 +20,11 @@ data State = State { world :: World, holding :: Maybe Id, objects :: Objects }
   deriving (Show)
 type WorldHolding = (World, Maybe Id)
 type WorldChange = (Int, [Id]) -- The changed column id and the new column
+
+data Ambiguity = Ambiguity
+    { controlQuestion :: String
+    , ambiguity       :: [Object]
+    }
 
 instance Eq State where
   s1 == s2 = world s1 == world s2 && holding s1 == holding s2
@@ -65,3 +70,34 @@ ok (Error err) = error err
 maybeOk :: Result a -> Maybe a
 maybeOk (Ok res) = Just res
 maybeOk (Error _) = Nothing
+
+-- Tests whether the first object can be placed immediately above the second
+-- object without violating the given constraints.
+validate :: Object -> Object -> Bool
+validate _                         (Object _     _ Ball)  = False
+validate (Object s1     _ Ball)    (Object s2    _ Box)   = s1 <= s2
+validate (Object _      _ Ball)    _                      = False
+validate (Object s1     _ Pyramid) (Object s2    _ Box)   = s1 < s2
+validate (Object s1     _ Plank)   (Object s2    _ Box)   = s1 < s2
+validate (Object s1     _ Box)     (Object s2    _ Plank) = s1 == s2
+validate (Object s1     _ Box)     (Object s2    _ Table) = s1 == s2
+validate (Object Large  _ Box)     (Object Large _ Brick) = True
+validate (Object s1     _ Box)     (Object s2    _ Box  ) = s1 < s2
+validate (Object _      _ Box)     _                      = False
+validate (Object s1     _ _)       (Object s2    _ _)     = s1 <= s2
+
+-- |Validates all physical laws. This does not look if the objects exists in the
+-- world, and it does not care about their locations.
+validateAllLaws :: Relation -> Object -> Object -> Bool
+validateAllLaws relation o1 o2 =
+  case relation of
+    Beside  -> True
+    Leftof  -> True
+    Rightof -> True
+    Above   -> sz o1 < sz o2
+    Ontop   -> validate o1 o2 && form o2 == Box
+    Under   -> sz o1 > sz o2
+    Inside  -> validate o1 o2 && form o2 == Box
+  where form (Object _ _ f) = f
+        sz (Object s _ _)  = s
+        color (Object _ c _) = c

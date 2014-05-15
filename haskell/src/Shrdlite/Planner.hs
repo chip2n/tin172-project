@@ -100,21 +100,6 @@ val objs y' | length y' > 1 = case l y1 of
       where l ys'  = M.lookup ys' objs
             [y1, y2] = take 2 $ reverse y'
 
--- Tests whether the first object can be placed immediately above the second
--- object without violating the given constraints.
-validate :: Object -> Object -> Bool
-validate _                         (Object _     _ Ball)  = False
-validate (Object s1     _ Ball)    (Object s2    _ Box)   = s1 <= s2
-validate (Object _      _ Ball)    _                      = False
-validate (Object s1     _ Pyramid) (Object s2    _ Box)   = s1 < s2
-validate (Object s1     _ Plank)   (Object s2    _ Box)   = s1 < s2
-validate (Object s1     _ Box)     (Object s2    _ Plank) = s1 == s2
-validate (Object s1     _ Box)     (Object s2    _ Table) = s1 == s2
-validate (Object Large  _ Box)     (Object Large _ Brick) = True
-validate (Object s1     _ Box)     (Object s2    _ Box  ) = s1 < s2
-validate (Object _      _ Box)     _                      = False
-validate (Object s1     _ _)       (Object s2    _ _)     = s1 <= s2
-
 takeHighest :: ([[Id]], [[Id]]) -> Maybe Id
 takeHighest ([], []) = Nothing
 takeHighest (xs, []) = maybeLast $ last xs
@@ -141,12 +126,12 @@ heuristics (TakeGoal obj) (w, h) = case obj of
       then 0
       else 2 + 2 * fromMaybe (error "object is not in the world")
                    (idHeight i w)
-heuristics (PutGoal Ontop (Obj i) Flr) (w,_) = case getFloorSpace w of
+heuristics (MoveGoal Ontop (Obj i) Flr) (w,_) = case getFloorSpace w of
   Just _ -> 1
   Nothing -> case makeFloorSpace w of
     Just steps -> minimum steps
     Nothing -> error $ "makeFloorSpace: can't make room for object: " ++ i
-heuristics (PutGoal rel (Obj i1) (Obj i2)) (w,_) = case rel of
+heuristics (MoveGoal rel (Obj i1) (Obj i2)) (w,_) = case rel of
   Ontop ->  let h1 = fromMaybe 0 $ idHeight i1 w
                 h2 = fromMaybe 0 $ idHeight i2 w
             in h1 + h2
@@ -246,10 +231,10 @@ check goal (w, h) = case goal of
   TakeGoal (Obj i)  -> case h of
     Nothing             -> False
     Just holdingId      -> i == holdingId
-  PutGoal Ontop (Obj i) Flr -> case objPos i w of
+  MoveGoal Ontop (Obj i) Flr -> case objPos i w of
     Just height -> height == 0
     Nothing -> False
-  PutGoal rel (Obj i1) (Obj i2) -> case rel of
+  MoveGoal rel (Obj i1) (Obj i2) -> case rel of
     Ontop -> isOver i1 i2 True w
     Inside -> isOver i1 i2 True w
     Beside -> isBeside i1 i2 w
@@ -262,7 +247,7 @@ check goal (w, h) = case goal of
     Above -> isOver i1 i2 False w
     Under -> isOver i2 i1 False w
     --_ -> error $ "Not implemented yet: Trying to put " ++ i1 ++ " " ++ show rel ++ " of " ++ i2
-  PutGoal {}      -> error "PutGoal not fully implemented yet"
+  MoveGoal {}      -> error "MoveGoal not fully implemented yet"
 
 -- TODO: Might want to check same height
 isBeside :: Id -> Id -> World -> Bool
@@ -292,4 +277,3 @@ stateTransition _ _ _ = error "stateTransition: no changes"
 -- | Checks which plans is the best one, according to some heuristic
 bestPlan :: [Plan] -> Plan
 bestPlan = undefined
-

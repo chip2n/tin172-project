@@ -27,6 +27,7 @@ library
                      , containers
                      , astar >=0.2.1
                      , json
+                     , mtl
   hs-source-dirs:      src
   default-language:    Haskell2010
 
@@ -37,6 +38,7 @@ executable shrdlite
                      , json
                      , containers
                      , PSQueue
+                     , mtl
   default-language:    Haskell2010
 
 Test-Suite test-shrdlite
@@ -52,5 +54,6 @@ Test-Suite test-shrdlite
                     astar >= 0.2.1,
                     json,
                     PSQueue,
+                    mtl,
                     shrdlite
    default-language:    Haskell2010
