@@ -7,10 +7,10 @@ import qualified Data.Set as S
 import qualified Data.Map as M
 import Data.Maybe
 
-data AStarState c = AStarState { closed   :: S.Set WorldHolding
-                                             , open     :: !(Q.PSQ WorldHolding c)
-                                             , pathCost :: !(M.Map WorldHolding c)
-                                             , parent   :: !(M.Map WorldHolding WorldHolding)}
+data AStarState c = AStarState { closed   :: !(S.Set WorldHolding)
+                               , open     :: !(Q.PSQ WorldHolding c)
+                               , pathCost :: !(M.Map WorldHolding c)
+                               , parent   :: !(M.Map WorldHolding WorldHolding)}
 
 aStar :: (Ord c, Num c)
         => Objects        -- Objects in the world
