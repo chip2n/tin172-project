@@ -16,7 +16,7 @@ solve :: World -> Maybe Id -> Objects -> [Goal] -> Plan
 solve _ _ _ []     = []
 solve w h o (g:[]) = fromMaybe [] plan
   where
-    plan = aStar o (worldGraph o) (heuristics g) (check g) (w,h)
+    plan = aStar (worldGraph o) (heuristics g) (check g) (w,h)
 solve w h o (g:gs) = case plan of
                         Nothing -> []
                         Just p  ->  case newPlan of
@@ -25,7 +25,7 @@ solve w h o (g:gs) = case plan of
                            where (newWorld, newHolding) = simulatePlan w h p
                                  newPlan = solve newWorld newHolding o gs
   where
-    plan = aStar o (worldGraph o) (heuristics g) (check g) (w,h)
+    plan = aStar (worldGraph o) (heuristics g) (check g) (w,h)
 
 simulatePlan :: World -> Maybe Id -> Plan -> (World, Maybe Id)
 simulatePlan oldWorld h [] = (oldWorld, h)
