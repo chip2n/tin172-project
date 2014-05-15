@@ -1,14 +1,20 @@
-module Shrdlite.Interpreter where
-
-import Shrdlite.Grammar
-import qualified Data.Map as M
-import Control.Monad
-import Data.Maybe
-import Data.Either
-import Control.Monad.Error
-import Control.Monad.Identity
+module Shrdlite.Interpreter (
+    interpretAll
+  , findEntity
+  , locationHolds
+  , searchObjects
+  ) where
 
 import Shrdlite.Common as Common
+import Shrdlite.Grammar as Grammar
+
+import Control.Monad
+import Control.Monad.Error
+import Control.Monad.Identity
+import Data.Either
+import Data.Maybe
+import qualified Data.Map as M
+
 
 type Interpretation = ErrorT InterpretationError Identity
 unInterpret :: Interpretation a -> Either InterpretationError a

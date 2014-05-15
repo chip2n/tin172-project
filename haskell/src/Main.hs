@@ -9,6 +9,7 @@ import Shrdlite.Grammar
 import Shrdlite.CombinatorParser
 import Text.JSON
 import Debug.Trace
+import qualified Data.Map as M
 
 -- Our own modules
 import Shrdlite.Common as Common
@@ -57,5 +58,4 @@ jsonMain jsinput = makeObj result
 
 showGoals :: [Goal] -> [String]
 showGoals goals = map show goals
-
 
