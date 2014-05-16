@@ -1,6 +1,18 @@
 \section*{Planner}
 Take utterence for specific objects.
 Put utterence for spific objects on or inside specific objects.
+
+\subsection*{Heuristics}
+We started out by just implementing the "take" utterance, so our heuristics
+were simply the number of objects that were on top of the sought after object.
+As we continued to add more utterances, that was left like that and later on it
+caused problems. Our planner was running very slowly because it was searching
+many more states that it did not have to, so picking up an object just a few
+objects down caused a search through 7000 states - pretty much a bredth-first
+search. This was solved by returning two times the number of objects above the
+one searched for. Having found this, the search was cut down to 40 states.
+
+\subsection*{A*}
 Our own AStar-algorithm.
 
 %The planner is basically untouched as of yet. We have been working mostly on

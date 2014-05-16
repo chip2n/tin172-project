@@ -1,6 +1,21 @@
-module Shrdlite.Grammar where
+module Shrdlite.Grammar (
+    Command(..)
+  , Location(..)
+  , Entity(..)
+  , Object(..)
+  , Quantifier(..)
+  , Relation(..)
+  , Size(..)
+  , Color(..)
+  , Form(..)
+  , size
+  , color
+  , SParser(..)
+  , command
+  ) where
 
 import Shrdlite.CombinatorParser
+import Text.JSON
 
 type SParser = Parser String
 
