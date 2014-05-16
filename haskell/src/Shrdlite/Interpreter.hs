@@ -16,7 +16,6 @@ import Data.Maybe
 import Debug.Trace
 import qualified Data.Map as M
 
-
 type Interpretation = ErrorT InterpretationError Identity
 unInterpret :: Interpretation a -> Either InterpretationError a
 unInterpret a = runIdentity $ runErrorT $ a

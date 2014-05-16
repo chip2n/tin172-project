@@ -13,10 +13,12 @@ import Shrdlite.Common as Common
 resolveAmbiguity :: State -> [Goal] -> Either String Goal
 resolveAmbiguity state goals = 
   case filter (possibleGoal state) goals of
-    []     -> Left "No valid goal."
-    [g]    -> Right g
-    (g:gs) -> Left "Ambiguity error"
+    []    -> Left "No valid goal."
+    goals -> maybe (Left "Ambiguity error") Right (pickOne state goals)
 
+pickOne :: State -> [Goal] -> Maybe Goal
+pickOne _ [] = Nothing
+pickOne _ gs = Just $ head gs
 
 possibleGoal :: State -> Goal -> Bool
 possibleGoal _     (TakeGoal Flr) = False

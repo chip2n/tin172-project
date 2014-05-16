@@ -32,11 +32,11 @@ jsonMain jsinput = makeObj result
     --goals     = concat . map (interpret state) $ trees
     goals     = case interpretAll state trees of
                   Left _   -> error $ "Interpretation error!"
-                  Right [gs] -> gs
-                  Right (gs:gss) -> trace "Warning: multiple goals - taking the first one." gs
-    goals'    = case resolveAmbiguity state goals of
-                  Left err -> error $ err -- TODO: Send control question
-                  Right g  -> [g]
+                  Right gs -> gs
+    --goals'    = case map (resolveAmbiguity state) goals of
+    --              Left err -> error $ err -- TODO: Send control question
+    --              Right g  -> [g]
+    goals'    = if length goals > 1 then error "Ambiguity not handled yet" else head goals
     plan      = Planner.solve world holding objects goals' :: Plan
 
     output
@@ -49,7 +49,7 @@ jsonMain jsinput = makeObj result
     result = [ ("utterance",    showJSON utterance)
              , ("trees",        showJSON (map show trees))
              , ("goals",        if not (null trees)
-                                  then showJSON (showGoals goals)
+                                  then showJSON (showGoals goals')
                                   else JSNull)
              , ("plan",         showJSON plan)
              , ("output",       showJSON output)
