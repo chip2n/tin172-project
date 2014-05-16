@@ -54,29 +54,29 @@ main = defaultMainWithOpts
 -- |Tries to find any white large ball.
 findEntityTest1 :: Assertion
 findEntityTest1 = assertBool "Could not find object" ("e" `elem` foundEntities)
-    where Right foundEntities = findEntity startState $ anyEntity largeWhiteBall
+    where Right foundEntities = unInterpret startState $ findEntity $ anyEntity largeWhiteBall
 
 -- |Tries to find any white large ball which is next to a table of any size and
 -- any color.
 findEntityTest2 :: Assertion
 findEntityTest2 = assertBool "Could not find object" ("e" `elem` foundEntities)
-    where Right foundEntities = findEntity startState $ allRelativeEntity largeWhiteBall besideTableLocation
+    where Right foundEntities = unInterpret startState $ findEntity $ allRelativeEntity largeWhiteBall besideTableLocation
 
 -- |Tries to find any large black ball.
 findEntityTest3 :: Assertion
 findEntityTest3 = assertBool "Found an object not present in the world" (length foundEntities == 0)
-    where Right foundEntities = findEntity startState $ anyEntity largeBlackBall
+    where Right foundEntities = unInterpret startState $ findEntity $ anyEntity largeBlackBall
 
 -- |Tries to find any large white ball which is next to a small brick of any
 -- size and any color.
 findEntityTest4 :: Assertion
 findEntityTest4 = assertBool ("Expected no matching objects, but found: " ++ show foundEntities) (length foundEntities == 0)
-    where Right foundEntities = findEntity startState $ anyRelativeEntity largeWhiteBall besideSmallBrickLocation
+    where Right foundEntities = unInterpret startState $ findEntity $ anyRelativeEntity largeWhiteBall besideSmallBrickLocation
 
 -- |Checks ambiguities
 findEntityTest5 :: Assertion
 findEntityTest5 = assertBool "Expected ambiguity, but received a correct result." isAmbiguity
-    where foundEntities = findEntity startState $ BasicEntity The (Object AnySize AnyColor Ball)
+    where foundEntities = unInterpret startState $ findEntity $ BasicEntity The (Object AnySize AnyColor Ball)
           isAmbiguity = case foundEntities of
                           Left _  -> True
                           Right _ -> False
@@ -84,7 +84,7 @@ findEntityTest5 = assertBool "Expected ambiguity, but received a correct result.
 -- |Tests Beside relation
 locationHoldsTest1 :: Assertion
 locationHoldsTest1 = assertBool "Beside location expected to hold, but doesn't" locHolds
-    where locHolds = locationHolds startState (id, obj) loc
+    where Right locHolds = unInterpret startState $ locationHolds startState (id, obj) loc
           id       = "l"
           obj      = Object Large AnyColor Box 
           loc      = Relative Beside (BasicEntity Any largeWhiteBall)
@@ -92,7 +92,7 @@ locationHoldsTest1 = assertBool "Beside location expected to hold, but doesn't" 
 -- |Tests Leftof relation
 locationHoldsTest2 :: Assertion
 locationHoldsTest2 = assertBool "Leftof location expected to hold, but doesn't" locHolds
-    where locHolds = locationHolds startState (id, obj) loc
+    where Right locHolds = unInterpret startState $ locationHolds startState (id, obj) loc
           id       = "e"
           obj      = largeWhiteBall
           loc      = Relative Leftof (BasicEntity Any (Object Large AnyColor Box))
@@ -100,7 +100,7 @@ locationHoldsTest2 = assertBool "Leftof location expected to hold, but doesn't" 
 -- |Tests Rightof relation
 locationHoldsTest3 :: Assertion
 locationHoldsTest3 = assertBool "Rightof location expected to hold, but doesn't" locHolds
-    where locHolds = locationHolds startState (id, obj) loc
+    where Right locHolds = unInterpret startState $ locationHolds startState (id, obj) loc
           id       = "l"
           obj      = Object Large AnyColor Box 
           loc      = Relative Rightof (BasicEntity Any largeWhiteBall)
@@ -108,7 +108,7 @@ locationHoldsTest3 = assertBool "Rightof location expected to hold, but doesn't"
 -- |Tests Above relation
 locationHoldsTest4 :: Assertion
 locationHoldsTest4 = assertBool "Above location expected to hold, but doesn't" locHolds
-    where locHolds = locationHolds startState (id, obj) loc
+    where Right locHolds = unInterpret startState $ locationHolds startState (id, obj) loc
           id       = "f"
           obj      = smallBlackBall
           loc      = Relative Above (BasicEntity Any (Object AnySize AnyColor Box))
@@ -116,7 +116,7 @@ locationHoldsTest4 = assertBool "Above location expected to hold, but doesn't" l
 -- |Tests Ontop relation
 locationHoldsTest5 :: Assertion
 locationHoldsTest5 = assertBool "Ontop location expected to hold, but doesn't" locHolds
-    where locHolds = locationHolds startState (id, obj) loc
+    where Right locHolds = unInterpret startState $ locationHolds startState (id, obj) loc
           id       = "l"
           obj      = Object Large AnyColor Box 
           loc      = Relative Ontop (BasicEntity Any (Object AnySize AnyColor Table))
@@ -124,7 +124,7 @@ locationHoldsTest5 = assertBool "Ontop location expected to hold, but doesn't" l
 -- |Tests Under relation
 locationHoldsTest6 :: Assertion
 locationHoldsTest6 = assertBool "Under location expected to hold, but doesn't" locHolds
-    where locHolds = locationHolds startState (id, obj) loc
+    where Right locHolds = unInterpret startState $ locationHolds startState (id, obj) loc
           id       = "m"
           obj      = Object Small Blue Box
           loc      = Relative Under (BasicEntity Any (Object AnySize AnyColor Ball))
@@ -132,15 +132,15 @@ locationHoldsTest6 = assertBool "Under location expected to hold, but doesn't" l
 -- |Tests Inside relation
 locationHoldsTest7 :: Assertion
 locationHoldsTest7 = assertBool "Inside location expected to hold, but doesn't" locHolds
-    where locHolds = locationHolds startState (id, obj) loc
+    where Right locHolds = unInterpret startState $ locationHolds startState (id, obj) loc
           id       = "f"
           obj      = smallBlackBall
           loc      = Relative Inside (BasicEntity Any (Object AnySize AnyColor Box))
 
 searchObjectsTest1 :: Assertion
 searchObjectsTest1 = assertBool ("Expected to find " ++ show expected ++ " but found " ++ show found) (expected == found)
-    where expected = Right [("e", largeWhiteBall), ("f", smallBlackBall)] :: Either [[(Id, Object)]] [(Id, Object)]
-          found    = searchObjects startState (Object AnySize AnyColor Ball) All Nothing
+    where expected = Right [("e", largeWhiteBall), ("f", smallBlackBall)] :: Either InterpretationError [(Id, Object)]
+          found    = unInterpret startState $ searchObjects (Object AnySize AnyColor Ball) All Nothing
 
 findObjPosTest1 :: Assertion
 findObjPosTest1 = assertBool "Object with id \"e\" was not found in column 0 and height 0" ((findObjPos "e" (world startState)) == Just (0,0))

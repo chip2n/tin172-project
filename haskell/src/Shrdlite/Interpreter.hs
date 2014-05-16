@@ -1,9 +1,11 @@
-module Shrdlite.Interpreter (
-    interpretAll
-  , findEntity
-  , locationHolds
-  , searchObjects
-  ) where
+module Shrdlite.Interpreter where
+--module Shrdlite.Interpreter (
+--    unInterpret
+--  , interpretAll
+--  , findEntity
+--  , locationHolds
+--  , searchObjects
+--  ) where
 
 import Shrdlite.Common as Common
 import Shrdlite.Grammar as Grammar
@@ -11,13 +13,13 @@ import Shrdlite.Grammar as Grammar
 import Control.Monad
 import Control.Monad.Error
 import Control.Monad.Identity
-import Control.Monad.Reader (ReaderT, runReaderT)
+import Control.Monad.Reader (ReaderT, runReaderT, ask)
 import Data.Either
 import Data.Maybe
 import Debug.Trace
+import Text.JSON
 import qualified Data.Map as M
 
---type Interpretation = ErrorT InterpretationError Identity
 type Interpretation = ReaderT State (ErrorT InterpretationError Identity) 
 unInterpret :: State -> Interpretation a -> Either InterpretationError a
 unInterpret state a = runIdentity $ runErrorT $ runReaderT a state
@@ -27,120 +29,114 @@ data InterpretationError = EntityError String
                          | OtherError String
                          deriving (Show, Eq)
 
-isEntityError :: InterpretationError -> Bool
-isEntityError (EntityError _) = True
-isEntityError _               = False
-
 isAmbiguityError :: InterpretationError -> Bool
 isAmbiguityError (AmbiguityError _) = True
 isAmbiguityError _                  = False
-
-isOtherError :: InterpretationError -> Bool
-isOtherError (OtherError _) = True
-isOtherError _              = False
 
 instance Error InterpretationError where
     noMsg  = OtherError ""
     strMsg = OtherError
 
+-- | Interprets all the provided commands in the given state.
 interpretAll :: State -> [Command] -> Either InterpretationError [[Goal]]
-interpretAll state cmds =
-  case validInterpretations of
-    []     -> error "No valid interpretations"
-    [a]    -> Right [a]
-    (a:as) -> Left $ AmbiguityError undefined
-  where interpretations = map (interpret state) cmds
-        validInterpretations = rights interpretations
-        ambiguityInterpretations = filter (\i -> isAmbiguityError i) (lefts interpretations)
+interpretAll state cmds = trace ("results: " ++ show results) Right validResults
+  where results = map (interpret state) cmds
+        validResults = rights results
+        invalidResults = lefts results
+--unInterpret state $ mapM interpret' cmds
 
 -- | Converts a parse tree into a PDDL representation of the final
 -- goal of the command
 interpret :: State -> Command -> Either InterpretationError [Goal]
 interpret state cmd = unInterpret state $ interpret' cmd
-  where interpret' (Take ent)     = takeEntity state ent
-        interpret' (Put loc)      = dropAtLocation state loc
-        interpret' (Move ent loc) = moveEntity state ent (Just loc)
 
-takeEntity :: State -> Entity -> Interpretation [Goal]
-takeEntity state ent =
+interpret' :: Command -> Interpretation [Goal]
+interpret' (Take ent)     = takeEntity ent
+interpret' (Put loc)      = dropAtLocation loc
+interpret' (Move ent loc) = moveEntity ent (Just loc)
+
+takeEntity :: Entity -> Interpretation [Goal]
+takeEntity ent =
   case ent of
     Floor                    -> throwError $ EntityError "Cannot take floor, ye rascal!"
-    BasicEntity q obj        ->
-      case searchObjects state obj q Nothing of
-        Right found -> return $     map (\(i,_) -> TakeGoal (Obj i)) found
-        Left _      -> throwError $ AmbiguityError undefined
-    RelativeEntity q obj loc -> 
-      case searchObjects state obj q (Just loc) of
-        Right found -> return $ map (\(i,_) -> TakeGoal (Obj i)) found
-        Left _      -> throwError $ AmbiguityError undefined
+    BasicEntity q obj        -> do
+      found <- searchObjects obj q Nothing
+      makeGoal found
+    RelativeEntity q obj loc -> do
+      found <- searchObjects obj q (Just loc)
+      makeGoal found
+  where makeGoal found = return $ map (\(i,_) -> TakeGoal (Obj i)) found
 
-dropAtLocation :: State -> Location -> Interpretation [Goal]
-dropAtLocation state (Relative rel ent) =
+dropAtLocation :: Location -> Interpretation [Goal]
+dropAtLocation (Relative rel ent) = do
+  state <- ask
+  let hold = fromJust $ holding state
   case ent of
     Floor                    -> return $ [MoveGoal rel (Obj hold) Flr]
-    BasicEntity q obj        ->
-      case searchObjects state obj q Nothing of
-        Right found -> return $ map (\(i,_) -> MoveGoal rel (Obj hold) (Obj i)) found
-        Left _      -> throwError $ AmbiguityError undefined
-    RelativeEntity q obj loc -> 
-      case searchObjects state obj q (Just loc) of
-        Right found -> return $ map (\(i,_) -> MoveGoal rel (Obj hold) (Obj i)) found
-        Left _      -> throwError $ AmbiguityError undefined
-  where hold = fromJust $ holding state
+    BasicEntity q obj        -> do
+      found <- searchObjects obj q Nothing
+      makeGoal found hold
+    RelativeEntity q obj loc -> do
+      found <- searchObjects obj q (Just loc)
+      makeGoal found hold
+  where makeGoal found hold = return $ map (\(i,_) -> MoveGoal rel (Obj hold) (Obj i)) found
 
-moveEntity :: State -> Entity -> Maybe Location -> Interpretation [Goal]
-moveEntity state ent (Just (Relative rel ent2)) =
+moveEntity :: Entity -> Maybe Location -> Interpretation [Goal]
+moveEntity ent (Just (Relative rel ent2)) = do
+  movingEntity <- findSingleEntity ent
   case ent2 of
-    BasicEntity q obj ->
-      case searchObjects state obj q Nothing of
-        Right found -> return $ map (\(i,_) -> MoveGoal rel (Obj movingEntity) (Obj i)) found
-        Left _      -> throwError $ AmbiguityError undefined
-    RelativeEntity q obj loc -> 
-      case searchObjects state obj q (Just loc) of
-        Right found -> return $ map (\(i,_) -> MoveGoal rel (Obj movingEntity) (Obj i)) found
-        Left _      -> throwError $ AmbiguityError undefined
+    BasicEntity q obj -> do
+      found <- searchObjects obj q Nothing
+      makeGoal found movingEntity
+    RelativeEntity q obj loc -> do
+      found <- searchObjects obj q (Just loc)
+      makeGoal found movingEntity
     Floor -> return $ [MoveGoal rel (Obj movingEntity) Flr]
-  where Right movingEntity = findSingleEntity state ent --TODO: Handle ambiguity
+  where makeGoal found movingEntity = return $ map (\(i,_) -> MoveGoal rel (Obj movingEntity) (Obj i)) found
 
 -- | Searches the objects map after objects matching the quantifier and location.
 -- Returns Left at ambiguity error, and Right otherwise.
-searchObjects :: State -> Object -> Quantifier ->
-                 Maybe Location -> Either [[(Id, Object)]] [(Id, Object)]
-searchObjects state obj quant mloc =
+--searchObjects :: State -> Object -> Quantifier ->
+--                 Maybe Location -> Either [[(Id, Object)]] [(Id, Object)]
+searchObjects :: Object -> Quantifier -> Maybe Location -> Interpretation [(Id, Object)]
+searchObjects obj quant mloc = do
+  state <- ask
   case mloc of
     Nothing ->
       case quant of
-        All -> Right foundObjects
-        Any -> Right foundObjects
-        The -> case length foundObjects of
-          1 -> Right $ take 1 foundObjects
-          _ -> Left $ map (: []) foundObjects
+        All -> return $ foundObjects state
+        Any -> return $ foundObjects state
+        The -> return $ foundObjects state
+       -- The -> case length (foundObjects state) of
+       --   1 -> return $ take 1 (foundObjects state)
+       --   _ -> throwError $ AmbiguityError $ map fst (foundObjects state) -- <------ ERROR
     Just loc ->
       case quant of
-        All -> Right foundObjects
-        Any -> let foundObjects' = filter (\(i, o) ->
-                     locationHolds state (i, o) loc) foundObjects
-               in Right foundObjects'
-        The -> let foundObjects' = filter (\(i, o) ->
-                     locationHolds state (i, o) loc) foundObjects
-               in case length foundObjects' of
-                 1 -> Right $ take 1 foundObjects'
-                 0 -> Right []
-                 _ -> Left $ map (: []) foundObjects'
+        All -> return $ foundObjects state
+        Any -> do
+          filterM (\(i,o) -> locationHolds state (i,o) loc) (foundObjects state)
+        The -> do
+          filterM (\(i,o) -> locationHolds state (i,o) loc) (foundObjects state)
+          -- foundObjects' <- filterM (\(i,o) -> locationHolds state (i,o) loc) (foundObjects state)
+          -- case length foundObjects' of
+          --   1 -> return $ take 1 foundObjects'
+          --   0 -> return []
+          --   _ -> error "Ambiguity" --Left $ map (: []) foundObjects'
   where 
-    ids = case holding state of
+    ids state = case holding state of
             Nothing      -> concat $ world state
             Just holdId  -> holdId : concat (world state)
-    exists (i,_)     = i `elem` ids
+    exists (i,_) state    = i `elem` (ids state)
     isMatching (_, o) = obj == o
-    foundObjects = filter exists . filter isMatching $ M.assocs (objects state)
+    foundObjects state = filter (\i -> exists i state) . filter isMatching $ M.assocs (objects state)
 
 -- | Checks if a location holds for an object in the world.
-locationHolds :: State -> (Id, Object) -> Location -> Bool
-locationHolds state (ide, _) (Relative rel ent) =
+locationHolds :: State -> (Id, Object) -> Location -> Interpretation Bool
+locationHolds state (ide, _) (Relative rel ent) = do
+  entityIds <- findEntity ent
   case objPos' of
     Nothing     -> error "Cannot validate location for non-existent objects"
-    Just (_, _) -> or $
+    Just (_, _) -> return $ or $
       case rel of
         Beside  -> map (\eId -> leftof ide eId || rightof ide eId) entityIds
         Leftof  -> map (leftof ide) entityIds
@@ -151,9 +147,6 @@ locationHolds state (ide, _) (Relative rel ent) =
         Inside  -> map (\eId -> sameColumn ide eId && inside ide eId) entityIds
   where
     objPos'           = findObjPos ide (world state)
-    entityIds        = case findEntity state ent of
-                         Right objs -> objs
-                         Left _     -> []
     findObjColumn i  = fmap fst . findObjPos i $ world state
     findObjHeight i  = fmap snd . findObjPos i $ world state
     sameColumn i1 i2 = fromMaybe False $ liftM (elem i2) (column state i1)
@@ -170,26 +163,26 @@ locationHolds state (ide, _) (Relative rel ent) =
                                       (findObjColumn i1) (findObjColumn i2)
     frm (Object _ _ f) = f
 
-    -- TODO: Handle no objects, and handle ambiguity
-findSingleEntity :: State -> Entity -> Either Ambiguity Id
-findSingleEntity state entity =
-  case findEntity state entity of
-    Left _ -> error $ "Ambiguity error"
-    Right a -> Right $ head a
+-- | Finds a single entity 
+findSingleEntity :: Entity -> Interpretation Id
+findSingleEntity entity = do
+  found <- findEntity entity
+  case found of
+    [] -> throwError $ EntityError ("Could not find entity " ++ show entity)
+    _  -> return $ head found
 
 -- | Finds all object ids matching the entity in the provided state        
-findEntity :: State -> Entity -> Either [[Id]] [Id]
-findEntity state ent =
+--findEntity :: State -> Entity -> Either [[Id]] [Id]
+findEntity :: Entity -> Interpretation [Id]
+findEntity ent =
   case ent of
-    Floor -> Right []
-    BasicEntity q obj -> 
-      case searchObjects state obj q Nothing of
-        Left objs -> Left $ map (map fst) objs
-        Right objs -> Right $ map fst objs
-    RelativeEntity q obj loc ->
-      case searchObjects state obj q (Just loc) of
-        Left objs -> Left $ map (map fst) objs
-        Right objs -> Right $ map fst objs
+    Floor -> return []
+    BasicEntity q obj -> do
+      found <- searchObjects obj q Nothing
+      return $ map fst found
+    RelativeEntity q obj loc -> do
+      found <- searchObjects obj q (Just loc)
+      return $ map fst found
 
 -- | Returns the column index of the object id, if any.
 column :: State -> Id -> Maybe [Id]

@@ -31,18 +31,24 @@ jsonMain jsinput = makeObj result
     trees     = parse command utterance :: [Command]
     --goals     = concat . map (interpret state) $ trees
     goals     = case interpretAll state trees of
-                  Left _   -> error $ "Interpretation error!"
+                  Left r   -> error $ "Interpretation error: " ++ show r
                   Right gs -> gs
     --goals'    = case map (resolveAmbiguity state) goals of
     --              Left err -> error $ err -- TODO: Send control question
     --              Right g  -> [g]
-    goals'    = if length goals > 1 then error "Ambiguity not handled yet" else head goals
-    plan      = Planner.solve world holding objects goals' :: Plan
+    goals'   = case goals of
+                  [] -> []
+                  [g] -> g
+                  _   -> []
+    --if length goals > 1 then error "Ambiguity not handled yet" else head goals
+    plan = if length goals' > 1
+             then Planner.solve world holding objects goals' :: Plan
+             else []
 
     output
       | null trees        = "Parse error!"
-      | null goals        = "Interpretation error!"
-      -- | length goals >= 2 = "Ambiguity error!"
+      | length goals' >= 2 = "Ambiguity error!"
+      | null goals'       = "Interpretation error!"
       | null plan         = "Planning error!"
       | otherwise         = "Much wow!"
 

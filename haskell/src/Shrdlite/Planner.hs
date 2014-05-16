@@ -37,7 +37,6 @@ simulatePlan oldWorld Nothing (p:ps) = simulatePlan newWorld (Just c) ps
    where (left, (c:col):right) = L.splitAt (read (last (words p))::Int) oldWorld
          newWorld = left ++ col:right
 
-
 -- Given a state, this produces all possible neighbours
 worldGraph :: Objects -> WorldHolding -> S.Set WorldHolding
 worldGraph o (w, h) = case h of
