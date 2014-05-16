@@ -13,6 +13,7 @@ import Control.Monad.Error
 import Control.Monad.Identity
 import Data.Either
 import Data.Maybe
+import Debug.Trace
 import qualified Data.Map as M
 
 
@@ -42,7 +43,7 @@ instance Error InterpretationError where
 interpretAll :: State -> [Command] -> Either InterpretationError [[Goal]]
 interpretAll state cmds =
   case validInterpretations of
-    []     -> undefined
+    []     -> error "No valid interpretations"
     [a]    -> Right [a]
     (a:as) -> Left $ AmbiguityError undefined
   where interpretations = map (interpret state) cmds
@@ -73,7 +74,7 @@ takeEntity state ent =
 dropAtLocation :: State -> Location -> Interpretation [Goal]
 dropAtLocation state (Relative rel ent) =
   case ent of
-    Floor                    -> throwError $ EntityError "Cannot take floor, ye rascal!"
+    Floor                    -> return $ [MoveGoal rel (Obj hold) Flr]
     BasicEntity q obj        ->
       case searchObjects state obj q Nothing of
         Right found -> return $ map (\(i,_) -> MoveGoal rel (Obj hold) (Obj i)) found
