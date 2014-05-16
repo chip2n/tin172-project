@@ -39,7 +39,7 @@ instance Error InterpretationError where
 
 -- | Interprets all the provided commands in the given state.
 interpretAll :: State -> [Command] -> Either InterpretationError [[Goal]]
-interpretAll state cmds = trace ("results: " ++ show results) Right validResults
+interpretAll state cmds = Right validResults
   where results = map (interpret state) cmds
         validResults = rights results
         invalidResults = lefts results
