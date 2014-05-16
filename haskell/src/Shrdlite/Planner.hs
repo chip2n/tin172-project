@@ -121,7 +121,7 @@ heuristics (MoveGoal Ontop (Obj i) Flr) (w,h) = if getFloorSpace w
          Just holdingId | i == holdingId -> 1
                         | hght == 0      -> 0
                         | otherwise      -> 2 + 2 * oAbove
-  else 
+  else
     case h of
       Nothing ->  if hght == 0
                     then 0
@@ -132,21 +132,27 @@ heuristics (MoveGoal Ontop (Obj i) Flr) (w,h) = if getFloorSpace w
   where oAbove = fromMaybe (error "object isn't in the world") (idHeight i w)
         hght = fromMaybe (error "planner: where did the object go?") (objPos i w)
         fs = makeFloorSpace w
-heuristics (MoveGoal rel (Obj i1) (Obj i2)) (w,h) = case rel of
+heuristics g@(MoveGoal rel (Obj i1) (Obj i2)) (w,h) = case rel of
   Ontop ->  let h1 = fromMaybe 1 $ liftM (*2) $ idHeight i1 w
                 h2 = fromMaybe 1 $ liftM (*2) $ idHeight i2 w
             in case h of
-                 Nothing        -> h1 + h2
+                 Nothing        -> if check g (w,h) -- if goal fulfilled, it has to be 0
+                                   then 0
+                                   else 2 + h1 + h2
                  Just holdingId -> if holdingId == i1 || holdingId == i2
-                                     then h1 + h2
-                                     else h1 + h2 + 2 -- remove the object we're holding.
+                                     then 1 + h1 + h2 -- put the object down
+                                     else h1 + h2 + 3 -- remove the object we're holding, move the object on top
   Inside -> let h1 = fromMaybe 0 $ liftM (*2) $ idHeight i1 w
                 h2 = fromMaybe 0 $ liftM (*2) $ idHeight i2 w
             in case h of
-                 Nothing        -> h1 + h2
-                 Just holdingId -> if holdingId == i1 || holdingId == i2
-                                     then h1 + h2
-                                     else h1 + h2 + 2
+                 Nothing        -> if check g (w,h)
+                                   then 0
+                                   else 2 + h1 + h2
+                 Just holdingId -> if holdingId == i1
+                                   then 1 + h1 + h2
+                                   else if holdingId == i2
+                                     then 4 + h1 + h2
+                                     else h1 + h2 + 3
   Beside -> case h of
     Nothing        -> cheapestCost i1 i2 w
     Just holdingId -> if holdingId == i1 || holdingId == i2
