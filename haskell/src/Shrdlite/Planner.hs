@@ -5,6 +5,7 @@ import Shrdlite.Grammar
 import Shrdlite.AStar
 
 import Data.Maybe
+import Control.Monad
 import qualified Data.List as L
 import qualified Data.Map as M
 import qualified Data.Set as S
@@ -36,34 +37,24 @@ simulatePlan oldWorld Nothing (p:ps) = simulatePlan newWorld (Just c) ps
    where (left, (c:col):right) = L.splitAt (read (last (words p))::Int) oldWorld
          newWorld = left ++ col:right
 
-{-
-    [ "I totally picked it up . . ."
-    , "pick " ++ show col
-    , ". . . and I dropped it down."
-    , "drop " ++ show col ]
-    where
-      Just col = case goal of
-        (TakeGoal (Obj i)) -> fmap fst $ findObjPos i world
-      -- Just col = findIndex (not . null) world
--}
 
 -- Given a state, this produces all possible neighbours
 worldGraph :: Objects -> WorldHolding -> S.Set WorldHolding
 worldGraph o (w, h) = case h of
-  Just i  -> foldl (placeObject o i) S.empty worldParts -- TODO: foldl' or foldr instead
-  Nothing -> foldl (takeObject o) S.empty worldParts -- TODO: foldl' or foldr instead
+  Just i  -> foldr (placeObject o i) S.empty worldParts
+  Nothing -> foldr (takeObject o) S.empty worldParts
   where
     worldParts = init $ zip (L.inits w) (L.tails w) -- TODO: try highest column first, so sort the zipped lists
 
-placeObject :: Objects -> Id -> S.Set WorldHolding -> ([[Id]], [[Id]]) -> S.Set WorldHolding
-placeObject o h s e = case newWorld h of
+placeObject :: Objects -> Id -> ([[Id]], [[Id]]) -> S.Set WorldHolding -> S.Set WorldHolding
+placeObject o h e s = case newWorld h of
   Nothing -> s
   Just w -> S.insert (w, Nothing) s
   where
     newWorld elm = joinModified o e (\x -> x ++ [elm])
 
-takeObject :: Objects -> S.Set WorldHolding -> ([[Id]], [[Id]]) -> S.Set WorldHolding
-takeObject o s e = case takeHighest e of
+takeObject :: Objects -> ([[Id]], [[Id]]) -> S.Set WorldHolding -> S.Set WorldHolding
+takeObject o e s = case takeHighest e of
   Nothing -> s
   Just i  -> S.insert (newWorld, Just i) s
   where
@@ -141,57 +132,89 @@ heuristics (TakeGoal obj) (w, h) = case obj of
       then 0
       else 2 + 2 * fromMaybe (error "object is not in the world")
                    (idHeight i w)
-heuristics (PutGoal Ontop (Obj i) Flr) (w,_) = case getFloorSpace w of
-  Just _ -> 1
-  Nothing -> case makeFloorSpace w of
-    Just steps -> minimum steps
-    Nothing -> error $ "makeFloorSpace: can't make room for object: " ++ i
-heuristics (PutGoal rel (Obj i1) (Obj i2)) (w,_) = case rel of
-  Ontop ->  let h1 = fromMaybe 0 $ idHeight i1 w
-                h2 = fromMaybe 0 $ idHeight i2 w
-            in h1 + h2
-  Inside -> let h1 = fromMaybe 0 $ idHeight i1 w
-                h2 = fromMaybe 0 $ idHeight i2 w
-            in h1 + h2
-  Beside -> cheapestCost i1 i2 w
-  Leftof -> cheapestCost i1 i2 w
-  Rightof -> cheapestCost i1 i2 w
-  Above -> cheapestCost i1 i2 w
-  Under -> cheapestCost i1 i2 w
+heuristics (PutGoal Ontop (Obj i) Flr) (w,h) = if getFloorSpace w
+  then case h of
+         Nothing -> if hght == 0 then 0
+                                 else 2 + 2 * oAbove
+         Just holdingId | i == holdingId -> 1
+                        | hght == 0      -> 0
+                        | otherwise      -> 2 + 2 * oAbove
+  else 
+    case h of
+      Nothing ->  if hght == 0
+                    then 0
+                    else 2 * hght + minimum fs
+      Just holdingId | i == holdingId -> 3 + minimum fs -- put it down, move the smallest pile and then pick it up and put it on the floor.
+                     | hght == 0      -> 0 -- Is our object already on the floor? good
+                     | otherwise      -> 3 + 2 * oAbove + minimum fs -- put the holding down, clear the objects above, move the smallest pile.
+  where oAbove = fromMaybe (error "object isn't in the world") (idHeight i w)
+        hght = fromMaybe (error "planner: where did the object go?") (objPos i w)
+        fs = makeFloorSpace w
+heuristics (PutGoal rel (Obj i1) (Obj i2)) (w,h) = case rel of
+  Ontop ->  let h1 = fromMaybe 1 $ liftM (*2) $ idHeight i1 w
+                h2 = fromMaybe 1 $ liftM (*2) $ idHeight i2 w
+            in case h of
+                 Nothing        -> h1 + h2
+                 Just holdingId -> if holdingId == i1 || holdingId == i2
+                                     then h1 + h2
+                                     else h1 + h2 + 2 -- remove the object we're holding.
+  Inside -> let h1 = fromMaybe 0 $ liftM (*2) $ idHeight i1 w
+                h2 = fromMaybe 0 $ liftM (*2) $ idHeight i2 w
+            in case h of
+                 Nothing        -> h1 + h2
+                 Just holdingId -> if holdingId == i1 || holdingId == i2
+                                     then h1 + h2
+                                     else h1 + h2 + 2
+  Beside -> case h of
+    Nothing        -> cheapestCost i1 i2 w
+    Just holdingId -> if holdingId == i1 || holdingId == i2
+                        then 1
+                        else 2 + cheapestCost i1 i2 w
+  Leftof -> case h of
+    Nothing        -> cheapestCost i1 i2 w
+    Just holdingId -> if holdingId == i1 || holdingId == i2
+                        then 1
+                        else 2 + cheapestCost i1 i2 w
+  Rightof -> case h of
+    Nothing        -> cheapestCost i1 i2 w
+    Just holdingId -> if holdingId == i1 || holdingId == i2
+                        then 1
+                        else 2 + cheapestCost i1 i2 w
+  Above -> case h of
+    Nothing        -> cheapestCost i1 i2 w
+    Just holdingId -> if holdingId == i1 || holdingId == i2
+                        then 1
+                        else 2 + cheapestCost i1 i2 w
+  Under -> case h of
+    Nothing        -> cheapestCost i1 i2 w
+    Just holdingId -> if holdingId == i1 || holdingId == i2
+                        then 1
+                        else 2 + cheapestCost i1 i2 w
   --_ -> error $ "TODO: impelement " ++ show rel ++ " in heuristics\n"
   --          ++ "Trying to put " ++ i1 ++ " " ++ show rel ++ " " ++ i2
 --heuristic (PutGoal {}) _ = error "PutGoal while not hold an object isn't implemented yet."
 
+-- | Returns the cheapest heuristics to either move all objects above one of the
+-- two given objects.
 cheapestCost :: Id -> Id -> World -> Int
-cheapestCost i1 i2 w = (*) 2 $ minimum [length l1 - h1,length l2 - h2]
-  where c1 = fromMaybe 1 $ clmn 0 i1 w
-        c2 = fromMaybe 1 $ clmn 0 i2 w
-        l1 = w !! c1
-        l2 = w !! c2
-        h1 = fromMaybe 0 $ idHeight' i1 l1
-        h2 = fromMaybe 0 $ idHeight' i2 l2
+cheapestCost i1 i2 w = (*) 2 $ minimum [h1,h2]
+  where h1 = fromMaybe 1 $ idHeight i1 w
+        h2 = fromMaybe 1 $ idHeight i2 w
 
-objAbove :: Id -> World -> Maybe Int
-objAbove _ [] = error "objects aren't in the world!"
-objAbove i2 (w:[]) = case L.elemIndex i2 w of
-  Nothing -> Nothing
-  Just index ->  return (length w - index)
-objAbove i2 (w:ws) = case L.elemIndex i2 w of
-  Nothing -> objAbove i2 ws
-  Just index ->  return index -- 2 * (length w - 1 - index)
+-- | Checks whether there exits an empty floor space.
+getFloorSpace :: World -> Bool
+getFloorSpace [] = False
+getFloorSpace ([]:_) = True
+getFloorSpace (_:ws) = getFloorSpace ws
 
-getFloorSpace :: World -> Maybe Int
-getFloorSpace [] = Nothing
-getFloorSpace ([]:_) = return 0
-getFloorSpace (_:ws) = case getFloorSpace ws of
-  Just i -> return $ i+1
-  Nothing -> Nothing
+-- | Returns the number of elements in every column.
+makeFloorSpace :: World -> [Int]
+makeFloorSpace [] = error "Planner.makeFloorSpace: Your world seems to be empty"
+makeFloorSpace [w] = [length w]
+--makeFloorSpace (w:ws) = makeFloorSpace ws >>= \ls -> return $ 2 * length w : ls
+makeFloorSpace (w:ws) = 2 * length w : makeFloorSpace ws
 
--- TODO: Probably an incorrect interpretation of the number of steps.
-makeFloorSpace :: World -> Maybe [Int]
-makeFloorSpace [] = return []
-makeFloorSpace (w:ws) = makeFloorSpace ws >>= \ls -> return $ 2 * length w : ls
-
+-- | Returns the column a given object exists in.
 clmn :: Int -> Id -> World -> Maybe Int
 clmn _ _ [] = Nothing
 clmn row i (w:ws) = case L.elemIndex i w of
