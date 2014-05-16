@@ -11,17 +11,21 @@ import Shrdlite.Grammar as Grammar
 import Control.Monad
 import Control.Monad.Error
 import Control.Monad.Identity
+import Control.Monad.Reader (ReaderT, runReaderT)
 import Data.Either
 import Data.Maybe
 import Debug.Trace
 import qualified Data.Map as M
 
-type Interpretation = ErrorT InterpretationError Identity
-unInterpret :: Interpretation a -> Either InterpretationError a
-unInterpret a = runIdentity $ runErrorT $ a
+--type Interpretation = ErrorT InterpretationError Identity
+type Interpretation = ReaderT State (ErrorT InterpretationError Identity) 
+unInterpret :: State -> Interpretation a -> Either InterpretationError a
+unInterpret state a = runIdentity $ runErrorT $ runReaderT a state
 
-data InterpretationError = EntityError String | AmbiguityError [Id] | OtherError String
-  deriving (Show, Eq)
+data InterpretationError = EntityError String
+                         | AmbiguityError [Id]
+                         | OtherError String
+                         deriving (Show, Eq)
 
 isEntityError :: InterpretationError -> Bool
 isEntityError (EntityError _) = True
@@ -52,7 +56,7 @@ interpretAll state cmds =
 -- | Converts a parse tree into a PDDL representation of the final
 -- goal of the command
 interpret :: State -> Command -> Either InterpretationError [Goal]
-interpret state cmd = unInterpret $ interpret' cmd
+interpret state cmd = unInterpret state $ interpret' cmd
   where interpret' (Take ent)     = takeEntity state ent
         interpret' (Put loc)      = dropAtLocation state loc
         interpret' (Move ent loc) = moveEntity state ent (Just loc)
