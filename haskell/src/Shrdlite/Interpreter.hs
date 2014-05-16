@@ -96,9 +96,7 @@ moveEntity state ent (Just (Relative rel ent2)) =
       case searchObjects state obj q (Just loc) of
         Right found -> return $ map (\(i,_) -> MoveGoal rel (Obj movingEntity) (Obj i)) found
         Left _      -> throwError $ AmbiguityError undefined
-    Floor -> case holding state of
-      Just ident -> return $ [MoveGoal Ontop (Obj ident) Flr]
-      Nothing    -> throwError $ EntityError "You're not holding anything."
+    Floor -> return $ [MoveGoal rel (Obj movingEntity) Flr]
   where Right movingEntity = findSingleEntity state ent --TODO: Handle ambiguity
 
 -- | Searches the objects map after objects matching the quantifier and location.
