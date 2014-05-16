@@ -58,7 +58,6 @@ takeObject o e s = case takeHighest e of
   Nothing -> s
   Just i  -> S.insert (newWorld, Just i) s
   where
-    --newWorld = fromJust $ joinModified state e maybeInit
     newWorld = fromMaybe (error "Error: Physical laws violated")
                          (joinModified o e maybeInit)
     maybeInit [] = []
@@ -74,8 +73,6 @@ joinModified _ (_, []) _ = Nothing
 joinModified objs (xs, y:ys) f = case val objs (f y) of
    Nothing -> Nothing
    Just y' -> Just $ xs ++ y':ys
---if length y' > 1 && head y' == "c" && last y' == "b"
---              then error $ show y'
 
 -- Taeks a column and checks if the the two topmost objects are in the correct
 -- order. If there are less than two object we assume there can be no conflicts.
@@ -175,9 +172,6 @@ heuristics (MoveGoal rel (Obj i1) (Obj i2)) (w,h) = case rel of
     Just holdingId -> if holdingId == i1 || holdingId == i2
                         then 1
                         else 2 + cheapestCost i1 i2 w
-  --_ -> error $ "TODO: impelement " ++ show rel ++ " in heuristics\n"
-  --          ++ "Trying to put " ++ i1 ++ " " ++ show rel ++ " " ++ i2
---heuristic (PutGoal {}) _ = error "PutGoal while not hold an object isn't implemented yet."
 
 -- | Returns the cheapest heuristics to either move all objects above one of the
 -- two given objects.
@@ -212,22 +206,22 @@ idHeight _ [] = Nothing
 idHeight i (w:ws) = case idHeight' i w of
   Nothing -> idHeight i ws
   mVal    -> mVal
---idHeight i (w:ws) = case L.elemIndex i w of
---  Nothing     -> idHeight i ws
---  Just index  -> return $ (length w - 1) - index
 
+-- | A helper function to idHeight which returns the number of objects above a
+-- given object if it exits.
 idHeight' :: Id -> [Id] -> Maybe Int
 idHeight' i ws = case L.elemIndex i ws of
   Nothing -> Nothing
   Just index -> return $ (length ws - 1) - index
 
+-- | Returns an objects height in a column where 0 is the bottom.
 objPos :: Id -> World -> Maybe Int
 objPos _ [] = Nothing
 objPos i (w:ws) = case L.elemIndex i w of
   Nothing -> objPos i ws
   Just index -> return index
 
--- | Checks is the first object is above the second object in the world
+-- | Checks if the first object is strictly above the second object in the world
 isAbove :: Id -> Id -> World -> Bool
 isAbove _ _ [] = False
 isAbove i1 i2 (w:ws) = case L.elemIndex i2 w of
@@ -269,10 +263,10 @@ check goal (w, h) = case goal of
                in ((c1 /= (-1) && c2 /= (-1)) && c1 > c2)
     Above -> isOver i1 i2 False w
     Under -> isOver i2 i1 False w
-    --_ -> error $ "Not implemented yet: Trying to put " ++ i1 ++ " " ++ show rel ++ " of " ++ i2
   MoveGoal {}      -> error "MoveGoal not fully implemented yet"
 
--- TODO: Might want to check same height
+-- | Checks if the second object is in the column strictly beside the first
+-- objects column.
 isBeside :: Id -> Id -> World -> Bool
 isBeside _ _ [] = False
 isBeside _ _ [_] = False
