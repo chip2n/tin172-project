@@ -33,6 +33,10 @@ isAmbiguityError :: InterpretationError -> Bool
 isAmbiguityError (AmbiguityError _) = True
 isAmbiguityError _                  = False
 
+isEntityError :: InterpretationError -> Bool
+isEntityError (EntityError _) = True
+isEntityError _               = False
+
 instance Error InterpretationError where
     noMsg  = OtherError ""
     strMsg = OtherError
@@ -83,16 +87,19 @@ dropAtLocation (Relative rel ent) = do
 
 moveEntity :: Entity -> Maybe Location -> Interpretation [Goal]
 moveEntity ent (Just (Relative rel ent2)) = do
-  movingEntity <- findSingleEntity ent
+  movingEntities <- findEntity ent  -- TODO: MUST CONSIDER ALL
   case ent2 of
     BasicEntity q obj -> do
       found <- searchObjects obj q Nothing
-      makeGoal found movingEntity
+      makeGoal found movingEntities
     RelativeEntity q obj loc -> do
       found <- searchObjects obj q (Just loc)
-      makeGoal found movingEntity
-    Floor -> return $ [MoveGoal rel (Obj movingEntity) Flr]
-  where makeGoal found movingEntity = return $ map (\(i,_) -> MoveGoal rel (Obj movingEntity) (Obj i)) found
+      makeGoal found movingEntities
+    Floor -> return $ map (\movingEntity -> MoveGoal rel (Obj movingEntity) Flr) movingEntities
+  where makeGoal found movingEntities = 
+          if length found == 0
+            then throwError $ EntityError "No matching entities."
+            else return $ concatMap (\movingEntity -> map (\(i,_) -> MoveGoal rel (Obj movingEntity) (Obj i)) found) movingEntities
 
 -- | Searches the objects map after objects matching the quantifier and location.
 -- Returns Left at ambiguity error, and Right otherwise.
