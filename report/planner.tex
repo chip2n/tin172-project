@@ -3,17 +3,36 @@ Take utterence for specific objects.
 Put utterence for spific objects on or inside specific objects.
 
 \subsection*{Heuristics}
-We started out by just implementing the "take" utterance, so our heuristics
-were simply the number of objects that were on top of the sought after object.
-As we continued to add more utterances, that was left like that and later on it
-caused problems. Our planner was running very slowly because it was searching
-many more states that it did not have to, so picking up an object just a few
-objects down caused a search through 7000 states - pretty much a bredth-first
-search. This was solved by returning two times the number of objects above the
-one searched for. Having found this, the search was cut down to 40 states.
+We started out by just implementing the ``take'' utterance, so our heuristics
+were simply the number of objects on top of the sought-after object.  As we
+continued to add more utterances, that part was left unchanged until we started
+getting major speed issues. We long thought that this was an issue with our
+state being too big, because we saved the whole world in every node of the
+graph that the A* algorithm was searching through. After rewriting the graph
+representation multiple times we realised that the problem was not with the
+graph, but with the heuristics. The number of objects above a given object
+turned out to be a very bad idea, and twice that number is much closer to
+reality. This cut our search space down from 7000 nodes (basically bredth-first
+search) to 40 nodes visited when picking up an object with about five objects
+above it. More of our heuristics can be found in table~\ref{tab:heuristics}.
+
+\begin{table}[h]
+    \begin{tabular}{|l|l|l|}
+    \hline
+    Action        & Holding something & Heuristic                      \\ \hline
+    Take          & Yes               & if holding the correct object: 0\\
+                  &                   & otherwise: 2 + 2 *
+                                        (number of objects above it)   \\ \hline
+                  & No                & 1 + 2 * (number of objects
+                                        above it)                      \\ \hline
+    Move to floor & Yes               & This is too complicated        \\ \hline
+    \end{tabular}
+    \caption{The heuristics for different utterances}
+\label{tab:heuristics}
+\end{table}
 
 \subsection*{A*}
-Our own AStar-algorithm.
+Our implementation of the AStar algorithm.
 
 %The planner is basically untouched as of yet. We have been working mostly on
 %the interpreter and ambiguity resolver. It can currently only partially execute
