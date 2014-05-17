@@ -1,15 +1,7 @@
 module Shrdlite.Interpreter where
---module Shrdlite.Interpreter (
---    unInterpret
---  , interpretAll
---  , findEntity
---  , locationHolds
---  , searchObjects
---  ) where
 
 import Shrdlite.Common as Common
 import Shrdlite.Grammar as Grammar
-
 import Control.Monad
 import Control.Monad.Error
 import Control.Monad.Identity
