@@ -1,11 +1,22 @@
-module Shrdlite.AStar where
+module Shrdlite.AStar (
+   -- * Dataypes
+     AStarState
 
-import Shrdlite.Common
-import qualified Data.PSQueue as Q
-import Data.PSQueue (Binding(..))
-import qualified Data.Set as S
-import qualified Data.Map as M
+   -- * Functions
+   , aStar
+   , aStar'
+   , resultList
+   , stateTrans
+   , updateState
+)
+where
+
 import Data.Maybe
+import Data.PSQueue (Binding(..))
+import Shrdlite.Common
+import qualified Data.Map as M
+import qualified Data.PSQueue as Q
+import qualified Data.Set as S
 
 -- | The current state of the algoritm. Closed nodes are visited, open is a
 -- queue of nodes to visit, pathCost keeps track of the cost of getting to each
@@ -75,8 +86,8 @@ resultList x@(w, _) xm = case M.lookup x xm of
 
 -- | Given two 'World' states and a counter (preferrably 0) make a 'Plan'
 stateTrans :: World -> World -> Int -> Plan
-stateTrans [] [] _ = error "stateTransition: no changes"
 stateTrans (c1:c1s) (c2:c2s) col = case compare (length c1) (length c2) of
     LT -> ["drop " ++ show col]
     GT -> ["pick " ++ show col]
     EQ -> stateTrans c1s c2s (col + 1)
+stateTrans _ _ _ = error "stateTransition: no changes"
