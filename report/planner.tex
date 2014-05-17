@@ -1,6 +1,4 @@
 \section*{Planner}
-Take utterence for specific objects.
-Put utterence for specific objects on or inside specific objects.
 
 \subsection*{Heuristics}
 We started out by just implementing the ``take'' utterance, so our heuristics
@@ -65,32 +63,9 @@ above it. More of our heuristics can be found in table~\ref{tab:heuristics}.
   \item[RightOf] Works like the \verb|LeftOf| utterance except right instead.
   \item[Above] This utterance works as \verb|Ontop| except it checks whether the
     one of the objects above the second one is the first one.
-  \item[Under] Exactly like \verb|Above| except we have fliped the first with
+  \item[Under] Exactly like \verb|Above| except we have flipped the first with
     the second object.
 \end{description}
-
-
-\begin{table}[h]
-    \begin{tabular}{|l|l|l|}
-    \hline
-    Action        & Holding something & Heuristic                      \\ \hline
-    Take          & Yes               & if holding the correct object: 0\\
-                  &                   & otherwise: 2 + 2 *
-                                        (number of objects above it)   \\ \hline
-                  & No                & 1 + 2 * (number of objects
-                                        above it)                      \\ \hline
-    Move to floor & Yes               & This is too complicated        \\ \hline
-    Ontop         & yes               &                                \\ \hline
-    Inside        & yes               &                                \\ \hline
-    Beside        & yes               &                                \\ \hline
-    LeftOf        & yes               &                                \\ \hline
-    RightOf       & yes               &                                \\ \hline
-    Above         & yes               &                                \\ \hline
-    Under         & yes               &                                \\ \hline
-    \end{tabular}
-    \caption{The heuristics for different utterances}
-\label{tab:heuristics}
-\end{table}
 
 \subsection*{A*}
 Our implementation of the AStar algorithm.
