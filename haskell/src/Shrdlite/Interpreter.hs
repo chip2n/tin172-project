@@ -101,10 +101,10 @@ searchObjects obj quant mloc = do
     Nothing ->
       case quant of
         All -> return foundObjects
-        _   -> return foundObjects
+        _   -> return foundObjects -- TODO
     Just loc ->
       case quant of
-        All -> return foundObjects
+        All -> return foundObjects -- TODO
         _   -> filterM (\(i,o) -> locationHolds (i,o) loc) foundObjects
   where 
     ids state = case holding state of
