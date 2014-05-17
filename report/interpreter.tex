@@ -1,39 +1,44 @@
 \section*{Interpreter}
-The interpreter will be working with the world to find objects that match the
-criteria such that the planner only works with the objects id and not the
-objects description.
+The interpreter will be working with the world to find objects that match the criteria such that the planner can work with the objects id and not the objects description. Keeping this in mind, we will need a way to find object based on their description. This will be the main focus on the interpreter. A few ambiguity errors can occur here - mainly based on which quantifier is used. This has to be included in the interpretation output, so that the ambiguity resolver can handle it.
 
-The implementation of the interpreter began by writing a suitable type for it. We knew that the interpreter needs to have access to some kind of world state, which it will search for objects. And the goal of the interpreter is to interpret a user command into a list of possible interpretations for the planner. So, we created the following types:
-
-\begin{lstlisting}[language=haskell]
-data State = State { world :: World
-                   , holding :: Maybe Id
-                   , objects :: Objects }
-
-type World = [[Id]]
-
-data Goal = TakeGoal GoalObject
-          | PutGoal Relation GoalObject GoalObject
-
-data GoalObject = Flr | Obj Id
-\end{lstlisting}
-Using these types, we could write the interpretation type signature as follows:
+The implementation of the interpreter began by writing a suitable type for it.
+We knew that the interpreter needs to have access to some kind of world state, which it will search for objects.
+And the goal of the interpreter is to interpret a user command into a list of possible interpretations for the planner.
+Using these observations, the type would be:
 
 \begin{lstlisting}
-interpret :: State -> Command -> [Goal]
+interpret :: State -> Command -> Either InterpretationError [Goal]
 \end{lstlisting}
 
-The implementation of interpret started with the realization that we needed a way to find objects in the world based on their appearance. In order to do this, we started fleshing out simple search functions, so that we can construct PDDL goals that references object IDs. The plan was that if we find multiple matching objects, we can either return one of them, or return an ambiguity error - depending on the user utterance.
+We decided to make a monadic interface for the interpreter, which is why the return type looks a bit funky.
+This was partly because we didn't want to pass the world state around all helper functions, but also to be able to handle possible errors.
+So, if the interpreter can't, for example, find a certain entity matching the user command, we can return an error which can be used in other parts of the program to give the user a nice output.
 
-\begin{lstlisting}
-searchObjects ::
-  State ->
-  Object ->
-  Quantifier ->
-  Maybe Location ->
-  Either [[(Id,Object)]] [(Id,Object)]
+\subsection*{State}
+The data type representing world state is, in our case, very simple.
+It contains the world obtained from the JSON parser, which is just a list of lists where each inner list represents a stack of object ids.
+The State data type also contains the object Id of the currently held object and, of course, a map for receiving object descriptions based on their object id.
 
-locationHolds :: State -> (Id, Object) -> Location -> Bool
-\end{lstlisting}
+\subsection*{Goal}
+The end goal of the interpreter is to convert the different user utterance interpretation (from the parser) to a list of different PDDL goals.
+In order to do this, we need to, as mentioned above, translate the object descriptions to their corresponding id.
+This is done by running the different search functions.
+When we receive the result from them, we just create the goals by checking location constraints etc for all the matching objects.
 
-The searchObjects function takes the world state, an Object (which is a description of the object's appearance), a quantifier (from the utterance) and an optional relative location. It returns either an ambiguity error (Left) bundled with all the possible matches, or a list of all the correctly matched items. In order to handle locations correctly, we needed the locationHolds function, which basically checks if a location is valid for the provided object in the provided world. Both were relativelt straight forward to implement, although it should be noted that a few bugs were discovered during the test writing.
+An important addition that we did late in the project was to include the quantifiers in the goals, so that the ambiguity resolver knows how to handle quantity-based ambiguities.
+
+\subsection*{Object search}
+The implementation of the interpreter started with the realization that we needed a way to find objects in the world based on their appearance.
+In order to do this, we started fleshing out simple search functions, so that we can construct PDDL goals that references object IDs as opposed to the object descriptions available from the user command.
+The plan was that if we find multiple matching objects, we can either return one of them, or return an ambiguity error - depending on the user utterance.
+
+The searchObjects function takes the world state (implicitly via the monadic interface), an object description, a quantifier (from the utterance) and an optional relative location.
+It returns either an ambiguity error (Left) bundled with all the possible matches, or a list of all the correctly matched items.
+In order to handle locations correctly, we needed the locationHolds function, which basically checks if a location is valid for the provided object in the provided world.
+Both were relatively straightforward to implement, although it should be noted that a few bugs were discovered during the test writing.
+
+\subsection*{Error handling}
+The interpreter does not handle any ambiguity errors.
+This means that it will return a list of goals (coupled with quantifiers).
+However, there can still be errors. For example, some functions might expect a certain id to exist.
+If the matching object cannot be found, an interpetation error will be returned.
