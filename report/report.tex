@@ -82,6 +82,8 @@
 
 % 6. Literal use survey
 
+% INCLUDE SOME EXAMPLES OF BOTH GOOD AND BAD SITUATIONS
+
 % not naturel language, but controlled naturel language.
 % No programming language terms
 % - Software development terms can be used
@@ -92,7 +94,22 @@
 % individual contibutions
 % 8 pages + appendix/references
 
-\section*{Introdction}
+\section*{Introduction}
+% Short introduction can go here
+
+In this report, we will use Haskell notation for function types.
+In case the reader is not familiar with this notation - here's an example:
+
+\begin{lstlisting}
+funName :: Arg1 -> Arg2 -> ReturnType
+\end{lstlisting}
+
+The last variable is always the return type. So, to write a function which takes a list of integers and returns a bool, we could write:
+
+\begin{lstlisting}
+foo :: [Int] -> Bool
+\end{lstlisting}
+
 \begin{description}
   \item[Beside] The assumption here was that the two objects should be placed in
     two columns that are located next to eachother.
