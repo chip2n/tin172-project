@@ -10,19 +10,20 @@ import qualified Data.List as L
 import qualified Data.Map as M
 import qualified Data.Set as S
 
--- | Creates a list of moves which together creates a "Plan". The plan can
+-- | Creates Just a list of moves which together creates a "Plan". The plan can
 -- consist of messages to the user and commands in the form of
--- "pick FLOOR_SPACE" and "drop FLOOR_SPACE"
-solve :: World -> Maybe Id -> Objects -> [Goal] -> Plan
-solve _ _ _ []     = []
-solve w h o (g:[]) = fromMaybe [] plan
+-- "pick FLOOR_SPACE" and "drop FLOOR_SPACE". If no plan could be found,
+-- returns Nothing
+solve :: World -> Maybe Id -> Objects -> [Goal] -> Maybe Plan
+solve _ _ _ []     = Nothing
+solve w h o (g:[]) = plan
   where
     plan = aStar (worldGraph o) (heuristics g) (check g) (w,h)
 solve w h o (g:gs) = case plan of
-                        Nothing -> []
+                        Nothing -> Nothing
                         Just p  ->  case newPlan of
-                           [] -> []
-                           p' -> p ++ p'
+                           Nothing -> Nothing
+                           Just p' -> Just $ p ++ p'
                            where (newWorld, newHolding) = simulatePlan w h p
                                  newPlan = solve newWorld newHolding o gs
   where
@@ -37,7 +38,7 @@ simulatePlan oldWorld Nothing (p:ps) = simulatePlan newWorld (Just c) ps
    where (left, (c:col):right) = L.splitAt (read (last (words p))::Int) oldWorld
          newWorld = left ++ col:right
 
--- Given a state, this produces all possible neighbours
+-- | Given a state, produces a set of all possible neighbours
 worldGraph :: Objects -> WorldHolding -> S.Set WorldHolding
 worldGraph o (w, h) = case h of
   Just i  -> foldr (placeObject o i) S.empty worldParts
@@ -45,6 +46,7 @@ worldGraph o (w, h) = case h of
   where
     worldParts = init $ zip (L.inits w) (L.tails w) -- TODO: try highest column first, so sort the zipped lists
 
+-- | Puts the World parts together, with the Id added to the beginning of the second list
 placeObject :: Objects -> Id -> ([[Id]], [[Id]]) -> S.Set WorldHolding -> S.Set WorldHolding
 placeObject o h e s = case newWorld h of
   Nothing -> s
@@ -52,6 +54,7 @@ placeObject o h e s = case newWorld h of
   where
     newWorld elm = joinModified o e (\x -> x ++ [elm])
 
+-- | Takes the top object from the first list of the last World part
 takeObject :: Objects -> ([[Id]], [[Id]]) -> S.Set WorldHolding -> S.Set WorldHolding
 takeObject o e s = case takeHighest e of
   Nothing -> s
@@ -62,10 +65,21 @@ takeObject o e s = case takeHighest e of
     maybeInit [] = []
     maybeInit xs = init xs
 
--- Joins two parts of the world together, modifying the first element in the
+-- | Takes the highest object in one of the lists
+takeHighest :: ([[Id]], [[Id]]) -> Maybe Id
+takeHighest ([], []) = Nothing
+takeHighest (xs, []) = maybeLast $ last xs
+takeHighest (_, y:_) = maybeLast y
+
+-- | The last element of the list, if it is not empty
+maybeLast :: [a] -> Maybe a
+maybeLast [] = Nothing
+maybeLast xs = Just $ last xs
+
+-- | Joins two parts of the world together, modifying the first element in the
 -- second list. The function is what modifies the element (which is itself a
 -- list) and is normally either placing or taking an object from the top of
--- the list. Returns a new world
+-- the list. Returns Just a new world
 joinModified :: Objects -> ([[Id]], [[Id]]) -> ([Id] -> [Id]) -> Maybe [[Id]]
 joinModified _ ([], []) _ = Nothing
 joinModified _ (_, []) _ = Nothing
@@ -73,7 +87,7 @@ joinModified objs (xs, y:ys) f = case val objs (f y) of
    Nothing -> Nothing
    Just y' -> Just $ xs ++ y':ys
 
--- Taeks a column and checks if the the two topmost objects are in the correct
+-- | Takes a column and checks if the the two topmost objects are in the correct
 -- order. If there are less than two object we assume there can be no conflicts.
 val :: Objects -> [Id] -> Maybe [Id]
 val objs y' | length y' > 1 = case l y1 of
@@ -87,26 +101,12 @@ val objs y' | length y' > 1 = case l y1 of
       where l ys'  = M.lookup ys' objs
             [y1, y2] = take 2 $ reverse y'
 
-takeHighest :: ([[Id]], [[Id]]) -> Maybe Id
-takeHighest ([], []) = Nothing
-takeHighest (xs, []) = maybeLast $ last xs
-takeHighest (_, y:_) = maybeLast y
-
-maybeLast :: [a] -> Maybe a
-maybeLast [] = Nothing
-maybeLast xs = Just $ last xs
-
--- The distance between two neitgboring nodes, i.e. two states.
--- This is always 1 for now, but could match column difference etc.
-dist :: (State,Goal) -> (State,Goal) -> Int
-dist = const.const 1
-
--- Heuristic defining how good a state is
+-- | Heuristic defining how good a state is
 heuristics :: Goal -> WorldHolding -> Int
 heuristics (TakeGoal obj) (w, h) = case obj of
   Flr -> error "Take floor goal cannot be assessed"
   (Obj i) -> case h of
-    Nothing             -> 1 + 2 * fromMaybe (error "object is not in the world2")
+    Nothing             -> 1 + 2 * fromMaybe (error "object is not in the world")
                                    (idHeight i w)
     Just holdingId      ->
       if i == holdingId
@@ -131,27 +131,26 @@ heuristics (MoveGoal Ontop (Obj i) Flr) (w,h) = if getFloorSpace w
   where oAbove = fromMaybe (error "object isn't in the world") (idHeight i w)
         hght = fromMaybe (error "planner: where did the object go?") (objPos i w)
         fs = makeFloorSpace w
-heuristics g@(MoveGoal rel (Obj i1) (Obj i2)) (w,h) = case rel of
-  Ontop ->  let h1 = fromMaybe 1 $ liftM (*2) $ idHeight i1 w
-                h2 = fromMaybe 1 $ liftM (*2) $ idHeight i2 w
+heuristics g@(MoveGoal rel (Obj i1) (Obj i2)) (w,h) =
+  if check g (w,h) -- if goal fulfilled, it has to be 0
+  then 0
+  else case rel of
+  Ontop ->  let h1 = fromMaybe 0 $ liftM (*2) $ idHeight i1 w
+                h2 = fromMaybe 0 $ liftM (*2) $ idHeight i2 w
             in case h of
-                 Nothing        -> if check g (w,h) -- if goal fulfilled, it has to be 0
-                                   then 0
-                                   else 2 + h1 + h2
-                 Just holdingId -> if holdingId == i1 || holdingId == i2
-                                     then 1 + h1 + h2 -- put the object down
-                                     else h1 + h2 + 3 -- remove the object we're holding, move the object on top
+                 Nothing        -> 2 + h1 + h2
+                 Just holdingId
+                   | holdingId == i1  -> 1 + h1 + h2 -- put the object down
+                   | otherwise  -> 3 + h1 + h2 -- put the holding object down and move object 1 ontop
   Inside -> let h1 = fromMaybe 0 $ liftM (*2) $ idHeight i1 w
                 h2 = fromMaybe 0 $ liftM (*2) $ idHeight i2 w
             in case h of
                  Nothing        -> if check g (w,h)
                                    then 0
                                    else 2 + h1 + h2
-                 Just holdingId -> if holdingId == i1
-                                   then 1 + h1 + h2
-                                   else if holdingId == i2
-                                     then 4 + h1 + h2
-                                     else h1 + h2 + 3
+                 Just holdingId
+                   | holdingId == i1  -> 1 + h1 + h2 -- put the object down
+                   | otherwise  -> 3 + h1 + h2 -- put the holding object down and move object 1 ontop
   Beside -> case h of
     Nothing        -> cheapestCost i1 i2 w
     Just holdingId -> if holdingId == i1 || holdingId == i2
@@ -178,7 +177,7 @@ heuristics g@(MoveGoal rel (Obj i1) (Obj i2)) (w,h) = case rel of
                         then 1
                         else 2 + cheapestCost i1 i2 w
 
--- | Returns the cheapest heuristics to either move all objects above one of the
+-- | Returns the cheapest heuristics to move all objects above one of the
 -- two given objects.
 cheapestCost :: Id -> Id -> World -> Int
 cheapestCost i1 i2 w = (*) 2 $ minimum [h1,h2]
@@ -195,7 +194,6 @@ getFloorSpace (_:ws) = getFloorSpace ws
 makeFloorSpace :: World -> [Int]
 makeFloorSpace [] = error "Planner.makeFloorSpace: Your world seems to be empty"
 makeFloorSpace [w] = [length w]
---makeFloorSpace (w:ws) = makeFloorSpace ws >>= \ls -> return $ 2 * length w : ls
 makeFloorSpace (w:ws) = 2 * length w : makeFloorSpace ws
 
 -- | Returns the column a given object exists in.
@@ -226,17 +224,12 @@ objPos i (w:ws) = case L.elemIndex i w of
   Nothing -> objPos i ws
   Just index -> return index
 
--- | Checks if the first object is strictly above the second object in the world
-isAbove :: Id -> Id -> World -> Bool
-isAbove _ _ [] = False
-isAbove i1 i2 (w:ws) = case L.elemIndex i2 w of
-  Nothing -> isAbove i1 i2 ws
-  Just index -> let i = index + 1 -- Index above i2, where i1 should be
-                in ((length w > i) -- Only look of i2 if list is long enough
-                  && (i1 == w !! i)) -- Is i1 above i2?
-
--- | Checks if the first object is over the second, with some maximum distance
-isOver :: Id -> Id -> Bool -> World -> Bool
+-- | Checks if the first object is over the second.
+isOver :: Id    -- ^ Object above
+       -> Id    -- ^ Object below
+       -> Bool  -- ^ Should the object be just above?
+       -> World -- ^ World to look in
+       -> Bool
 isOver _ _ _ [] = False
 isOver i1 i2 above (w:ws) = case L.elemIndex i1 w of
   Nothing     -> isOver i1 i2 above ws
@@ -282,20 +275,3 @@ isBeside i1 i2 (w:v:ws) = if isHere i1 i2 w
     isHere _ _ [] = False
     isHere i j (o:os) = (i == o || j == o) || isHere i j os
 
-statePlan :: [(State,Goal)] -> Plan
-statePlan []                 = []
-statePlan ((_,_):[])         = []
-statePlan ((s1,_):(s2,g):xs) = stateTransition w1 w2 0 ++ statePlan ((s2,g):xs)
-  where w1 = world s1
-        w2 = world s2
-
-stateTransition :: World -> World -> Int -> Plan
-stateTransition (c1:c1s) (c2:c2s) col = case compare (length c1) (length c2) of
-  LT -> ["drop " ++ show col]
-  GT -> ["pick " ++ show col]
-  EQ -> stateTransition c1s c2s (col + 1)
-stateTransition _ _ _ = error "stateTransition: no changes"
-
--- | Checks which plans is the best one, according to some heuristic
-bestPlan :: [Plan] -> Plan
-bestPlan = undefined

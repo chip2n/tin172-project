@@ -1,16 +1,19 @@
 module Shrdlite.Grammar (
-    Command(..)
-  , Location(..)
-  , Entity(..)
-  , Object(..)
-  , Quantifier(..)
-  , Relation(..)
-  , Size(..)
-  , Color(..)
-  , Form(..)
+  -- * Types
+    Command    (..)
+  , Location   (..)
+  , Entity     (..)
+  , Object     (..)
+  , Quantifier (..)
+  , Relation   (..)
+  , Size       (..)
+  , Color      (..)
+  , Form       (..)
+  , SParser    (..)
+
+  -- * Functions
   , size
   , color
-  , SParser(..)
   , command
   ) where
 
@@ -121,10 +124,12 @@ relation = lexicon [(Beside,  ["beside"]),
                   (Under,   ["under"]),
                   (Inside,  ["inside", "in", "into"])]
 
+-- | Parses the size from a string
 size :: SParser Size
 size = lexicon [(Small,  ["small", "tiny"]),
                 (Large,  ["large", "big"])]
 
+-- | Parses the colour from a string
 color :: SParser Color
 color = lexicon [(Black,  ["black"]),
                  (White,  ["white"]),
@@ -133,6 +138,7 @@ color = lexicon [(Black,  ["black"]),
                  (Yellow, ["yellow"]),
                  (Red,    ["red"])]
 
+-- | Parses the form from a string
 form :: Number -> SParser Form
 form n = lexicon [(AnyForm, [regNoun n "object", regNoun n "thing", regNoun n "form"]),
                   (Brick,   [regNoun n "brick"]),

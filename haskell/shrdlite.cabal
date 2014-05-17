@@ -22,12 +22,20 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 library
+  exposed-modules:     Shrdlite.AmbiguityResolver
+                     , Shrdlite.AStar
+                     , Shrdlite.CombinatorParser
+                     , Shrdlite.Common
+                     , Shrdlite.Grammar
+                     , Shrdlite.Interpreter
+                     , Shrdlite.Planner
   other-extensions:    GADTs
   build-depends:       base ==4.*
                      , containers
                      , astar >=0.2.1
                      , json
                      , mtl
+                     , PSQueue
   hs-source-dirs:      src
   default-language:    Haskell2010
 

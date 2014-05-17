@@ -8,8 +8,7 @@ module Main where
 import Shrdlite.Grammar
 import Shrdlite.CombinatorParser
 import Text.JSON
-import Debug.Trace
-import qualified Data.Map as M
+import Data.Maybe
 
 -- Our own modules
 import Shrdlite.Common as Common
@@ -19,10 +18,10 @@ import Shrdlite.Planner as Planner
 
 main :: IO ()
 main = getContents >>= putStrLn . encode . jsonMain . ok . decode
-                                   
+
 jsonMain :: JSObject JSValue -> JSValue
 jsonMain jsinput = makeObj result
-  where 
+  where
     utterance = ok      (valFromObj "utterance" jsinput)         :: Utterance
     world     = ok      (valFromObj "world"     jsinput)         :: World
     holding   = maybeOk (valFromObj "holding"   jsinput)         :: Maybe Id
@@ -41,21 +40,22 @@ jsonMain jsinput = makeObj result
                   [g] -> g
                   _   -> []
     --if length goals > 1 then error "Ambiguity not handled yet" else head goals
-    plan = if length goals' == 1
-             then Planner.solve world holding objects goals' :: Plan
-             else []
+    plan = if length goals' > 0
+             then Planner.solve world holding objects goals' :: Maybe Plan
+             else Nothing
 
     output
-      | null trees        = "Parse error!"
-      | length goals' >= 2 = "Ambiguity error!"
-      | null goals'       = "Interpretation error!"
-      | null plan         = "Planning error!"
-      | otherwise         = "Much wow!"
+      | null trees          = "Parse error!"
+      | length goals' >= 2  = "Ambiguity error!" -- just OR them
+      | null goals'         = "Interpretation error!"
+      | isNothing plan      = "Planning error!"
+      | fromJust plan == [] = "Way ahead of you!"
+      | otherwise           = "Much wow!"
 
     result = [ ("utterance",    showJSON utterance)
              , ("trees",        showJSON (map show trees))
              , ("goals",        showJSON $ map show goals)
-             , ("plan",         showJSON plan)
+             , ("plan",         showJSON $ fromMaybe [] plan)
              , ("output",       showJSON output)
              , ("receivedJSON", showJSON $ jsinput)
              ]
