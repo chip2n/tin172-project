@@ -101,7 +101,7 @@ findEntityTest5 = assertBool "Expected ambiguity, but received a correct result.
 -- |Tests Beside relation
 locationHoldsTest1 :: Assertion
 locationHoldsTest1 = assertBool "Beside location expected to hold, but doesn't" locHolds
-    where Right locHolds = unInterpret startState $ locationHolds startState (id, obj) loc
+    where Right locHolds = unInterpret startState $ locationHolds (id, obj) loc
           id       = "l"
           obj      = Object Large AnyColor Box 
           loc      = Relative Beside (BasicEntity Any largeWhiteBall)
@@ -109,7 +109,7 @@ locationHoldsTest1 = assertBool "Beside location expected to hold, but doesn't" 
 -- |Tests Leftof relation
 locationHoldsTest2 :: Assertion
 locationHoldsTest2 = assertBool "Leftof location expected to hold, but doesn't" locHolds
-    where Right locHolds = unInterpret startState $ locationHolds startState (id, obj) loc
+    where Right locHolds = unInterpret startState $ locationHolds (id, obj) loc
           id       = "e"
           obj      = largeWhiteBall
           loc      = Relative Leftof (BasicEntity Any (Object Large AnyColor Box))
@@ -117,7 +117,7 @@ locationHoldsTest2 = assertBool "Leftof location expected to hold, but doesn't" 
 -- |Tests Rightof relation
 locationHoldsTest3 :: Assertion
 locationHoldsTest3 = assertBool "Rightof location expected to hold, but doesn't" locHolds
-    where Right locHolds = unInterpret startState $ locationHolds startState (id, obj) loc
+    where Right locHolds = unInterpret startState $ locationHolds (id, obj) loc
           id       = "l"
           obj      = Object Large AnyColor Box 
           loc      = Relative Rightof (BasicEntity Any largeWhiteBall)
@@ -125,7 +125,7 @@ locationHoldsTest3 = assertBool "Rightof location expected to hold, but doesn't"
 -- |Tests Above relation
 locationHoldsTest4 :: Assertion
 locationHoldsTest4 = assertBool "Above location expected to hold, but doesn't" locHolds
-    where Right locHolds = unInterpret startState $ locationHolds startState (id, obj) loc
+    where Right locHolds = unInterpret startState $ locationHolds (id, obj) loc
           id       = "f"
           obj      = smallBlackBall
           loc      = Relative Above (BasicEntity Any (Object AnySize AnyColor Box))
@@ -133,7 +133,7 @@ locationHoldsTest4 = assertBool "Above location expected to hold, but doesn't" l
 -- |Tests Ontop relation
 locationHoldsTest5 :: Assertion
 locationHoldsTest5 = assertBool "Ontop location expected to hold, but doesn't" locHolds
-    where Right locHolds = unInterpret startState $ locationHolds startState (id, obj) loc
+    where Right locHolds = unInterpret startState $ locationHolds (id, obj) loc
           id       = "l"
           obj      = Object Large AnyColor Box 
           loc      = Relative Ontop (BasicEntity Any (Object AnySize AnyColor Table))
@@ -141,7 +141,7 @@ locationHoldsTest5 = assertBool "Ontop location expected to hold, but doesn't" l
 -- |Tests Under relation
 locationHoldsTest6 :: Assertion
 locationHoldsTest6 = assertBool "Under location expected to hold, but doesn't" locHolds
-    where Right locHolds = unInterpret startState $ locationHolds startState (id, obj) loc
+    where Right locHolds = unInterpret startState $ locationHolds (id, obj) loc
           id       = "m"
           obj      = Object Small Blue Box
           loc      = Relative Under (BasicEntity Any (Object AnySize AnyColor Ball))
@@ -149,7 +149,7 @@ locationHoldsTest6 = assertBool "Under location expected to hold, but doesn't" l
 -- |Tests Inside relation
 locationHoldsTest7 :: Assertion
 locationHoldsTest7 = assertBool "Inside location expected to hold, but doesn't" locHolds
-    where Right locHolds = unInterpret startState $ locationHolds startState (id, obj) loc
+    where Right locHolds = unInterpret startState $ locationHolds (id, obj) loc
           id       = "f"
           obj      = smallBlackBall
           loc      = Relative Inside (BasicEntity Any (Object AnySize AnyColor Box))

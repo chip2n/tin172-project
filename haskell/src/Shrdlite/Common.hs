@@ -33,6 +33,15 @@ instance Eq State where
 instance Ord State where
   compare s1 s2 = compare (world s1) (world s2)
 
+getSize :: Object -> Size
+getSize (Object s _ _) = s
+
+getColor :: Object -> Color
+getColor (Object _ c _) = c
+
+getForm :: Object -> Form
+getForm (Object _ _ f) = f
+
 -- |Finds the column and height of the object with the provided id
 findObjPos :: Id -> World -> Maybe (Int,Int)
 findObjPos = findObjPos' 0
