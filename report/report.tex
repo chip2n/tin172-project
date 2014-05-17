@@ -58,7 +58,8 @@
 
 % 1. Introduction
 % - Foundation of the world
-%   (how spatiel relations are interpreted how goals are seperated)
+%   (how spatial relations are interpreted
+%    how goals are seperated)
 
 % 2. Interpretation
 % - How are parse trees connected to PDDLs
@@ -91,19 +92,38 @@
 % individual contibutions
 % 8 pages + appendix/references
 
-\section*{Background}
-The group decided to work with an agile workflow and to use git for versioning.
-With this kind of workflow did the work focus on the one utterance at a time.
-This helped the group to work in different part of the code without conflicts.
+\section*{Introdction}
+\begin{description}
+  \item[Beside] The assumption here was that the two objects should be placed in
+    two columns that are located next to eachother.
+  \item[Leftof] We interpreted this to be that the first object would have to be
+    placed in one of the columns that are left of the right objects column and
+    vice versa.
+  \item[Rightof] Just as in \verb|Leftof|, but the two objects are flipped.
+  \item[Above] This was interpreted to mean that the two objects would be placed
+    in the same column with the first object being above the second one, but
+    there could exist objects between them.
+  \item[Ontop] We took this to mean that the first object needed to be placed
+   strictly on the second object with no objects in between them.
+  \item[Under] This was interpreted just as \verb|Above|, but the two objects
+    were flipped.
+  \item[Inside] We assumed this relation could only be applied to boxes, but
+  otherwise it follows the \verb|Ontop| relation.
+\end{description}
+takegoal movegoal
 
-As of now the assumptions the group have made about the problems that could
-occur are only two problems so far. Firstly an utterance asking to pick up the
-floor would evaluate to an empty list of goals since the floor has a fixed
-position.
+% The group decided to work with an agile workflow and to use git for versioning.
+% With this kind of workflow did the work focus on the one utterance at a time.
+% This helped the group to work in different part of the code without conflicts.
 
-Secondly the utterance requesting to take (pick up) multiple objects
-without some secondary objective (such as putting them all in boxes) will be
-impossible since we cannot hold more than a single object at a time.
+% As of now the assumptions the group have made about the problems that could
+% occur are only two problems so far. Firstly an utterance asking to pick up the
+% floor would evaluate to an empty list of goals since the floor has a fixed
+% position.
+
+% Secondly the utterance requesting to take (pick up) multiple objects
+% without some secondary objective (such as putting them all in boxes) will be
+% impossible since we cannot hold more than a single object at a time.
 
 \input{./parser.tex}
 
