@@ -16,7 +16,11 @@ import Text.JSON
 
 main :: IO ()
 main = defaultMainWithOpts
-    [ testGroup "findEntityTests"
+    [ testGroup "interpretTests"
+        [ testCase "interpreterTest1" interpretTest1
+        , testCase "interpreterTest2" interpretTest2
+        ]
+    , testGroup "findEntityTests"
         [ testCase "findEntityTest1" findEntityTest1
         , testCase "findEntityTest2" findEntityTest2
         , testCase "findEntityTest3" findEntityTest3
@@ -50,6 +54,19 @@ main = defaultMainWithOpts
         , testCase "validateObjectTest7" validateObjectTest7
         ]
     ] mempty
+
+-- |Tests the interpreter
+interpretTest1 :: Assertion
+interpretTest1 = assertBool "Interpret failed." (length result == 1 && (head result) == MoveGoal Ontop (Obj "f") Flr)
+  where cmd = Move (RelativeEntity The anyBall (Relative Inside (BasicEntity The (Object AnySize Blue Box)))) (Relative Ontop Floor)
+        Right result = interpret startState cmd
+
+-- |Tests the interpreter
+interpretTest2 :: Assertion
+interpretTest2 = assertBool "Interpret failed." (isEntityError result)
+  where cmd =	Move (BasicEntity The (Object AnySize AnyColor Ball)) (Relative Inside (RelativeEntity The (Object AnySize Blue Box) (Relative Ontop Floor)))
+        Left result = interpret startState cmd
+        
 
 -- |Tries to find any white large ball.
 findEntityTest1 :: Assertion
@@ -225,6 +242,9 @@ smallBlackBall = Object Small Black Ball
 
 largeRedBox :: Object
 largeRedBox = Object Large Red Box
+
+anyBall :: Object
+anyBall = Object AnySize AnyColor Ball
 
 smallGreenBox :: Object
 smallGreenBox = Object Small Green Box

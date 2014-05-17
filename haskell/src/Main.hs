@@ -41,7 +41,7 @@ jsonMain jsinput = makeObj result
                   [g] -> g
                   _   -> []
     --if length goals > 1 then error "Ambiguity not handled yet" else head goals
-    plan = if length goals' > 1
+    plan = if length goals' == 1
              then Planner.solve world holding objects goals' :: Plan
              else []
 
@@ -54,14 +54,8 @@ jsonMain jsinput = makeObj result
 
     result = [ ("utterance",    showJSON utterance)
              , ("trees",        showJSON (map show trees))
-             , ("goals",        if not (null trees)
-                                  then showJSON (showGoals goals')
-                                  else JSNull)
+             , ("goals",        showJSON $ map show goals)
              , ("plan",         showJSON plan)
              , ("output",       showJSON output)
              , ("receivedJSON", showJSON $ jsinput)
              ]
-
-showGoals :: [Goal] -> [String]
-showGoals goals = map show goals
-
