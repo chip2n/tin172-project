@@ -1,5 +1,13 @@
+% 3. Ambiguity resolution
+% - How are multiple PDDL goals handled? pick first/random? clarification
+%   question? return ambiguity error.
+
 \section*{Ambiguity resolver}
-The current ambiguity resolver i very simple. It just checks the number of
-possible interpretations. If we only have one it passes it through, otherwise
-it simply rejects the command.
+The ambiguity resolver needs the state of the world and all the possible goals that could be interpreted from the input.
+Once we have the goals we checks all of them if the laws of physics will apply on al of them.
+After which we check if the quantifiers makes any of the goals obsolete.
+
+% The current ambiguity resolver i very simple. It just checks the number of
+% possible interpretations. If we only have one it passes it through, otherwise
+% it simply rejects the command.
 
