@@ -5,7 +5,7 @@
 \section*{Ambiguity resolver}
 The ambiguity resolver needs the state of the world and all the possible goals that could be interpreted from the input.
 Once we have the goals we checks all of them if the laws of physics will apply on all of them.
-The check is simple, depending on what kind of goal is being checked then certain results will return a fail.
+The check is simple, depending on what kind of goal (move- or takegoals) is being checked.
 After which we check if the quantifiers makes any of the goals obsolete. %TODO go inte more detail
 
 % The current ambiguity resolver i very simple. It just checks the number of
