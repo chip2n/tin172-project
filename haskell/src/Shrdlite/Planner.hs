@@ -105,7 +105,7 @@ val objs y' | length y' > 1 = case l y1 of
 heuristics :: Goal -> WorldHolding -> Int
 heuristics (TakeGoal obj) (w, h) = case obj of
   Flr -> error "Take floor goal cannot be assessed"
-  (Obj i) -> case h of
+  (Obj _ i) -> case h of
     Nothing             -> 1 + 2 * fromMaybe (error "object is not in the world")
                                    (idHeight i w)
     Just holdingId      ->
@@ -113,7 +113,7 @@ heuristics (TakeGoal obj) (w, h) = case obj of
       then 0
       else 2 + 2 * fromMaybe (error "object is not in the world")
                    (idHeight i w)
-heuristics (MoveGoal Ontop (Obj i) Flr) (w,h) = if getFloorSpace w
+heuristics (MoveGoal Ontop (Obj _ i) Flr) (w,h) = if getFloorSpace w
   then case h of
          Nothing -> if hght == 0 then 0
                                  else 2 + 2 * oAbove
@@ -131,7 +131,7 @@ heuristics (MoveGoal Ontop (Obj i) Flr) (w,h) = if getFloorSpace w
   where oAbove = fromMaybe (error "object isn't in the world") (idHeight i w)
         hght = fromMaybe (error "planner: where did the object go?") (objPos i w)
         fs = makeFloorSpace w
-heuristics g@(MoveGoal rel (Obj i1) (Obj i2)) (w,h) =
+heuristics g@(MoveGoal rel (Obj _ i1) (Obj _ i2)) (w,h) =
   if check g (w,h) -- if goal fulfilled, it has to be 0
   then 0
   else case rel of
@@ -243,13 +243,13 @@ isOver i1 i2 above (w:ws) = case L.elemIndex i1 w of
 check :: Goal -> WorldHolding -> Bool
 check goal (w, h) = case goal of
   TakeGoal Flr  -> error "Take floor goal cannot be assessed"
-  TakeGoal (Obj i)  -> case h of
+  TakeGoal (Obj _ i)  -> case h of
     Nothing             -> False
     Just holdingId      -> i == holdingId
-  MoveGoal Ontop (Obj i) Flr -> case objPos i w of
+  MoveGoal Ontop (Obj _ i) Flr -> case objPos i w of
     Just height -> height == 0
     Nothing -> False
-  MoveGoal rel (Obj i1) (Obj i2) -> case rel of
+  MoveGoal rel (Obj _ i1) (Obj _ i2) -> case rel of
     Ontop -> isOver i1 i2 True w
     Inside -> isOver i1 i2 True w
     Beside -> isBeside i1 i2 w

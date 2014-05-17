@@ -28,18 +28,12 @@ jsonMain jsinput = makeObj result
     objects   = parseObjects $ ok (valFromObj "objects" jsinput) :: Objects
     state     = State world holding objects
     trees     = parse command utterance :: [Command]
-    --goals     = concat . map (interpret state) $ trees
     goals     = case interpretAll state trees of
                   Left r   -> error $ "Interpretation error: " ++ show r
-                  Right gs -> gs
-    --goals'    = case map (resolveAmbiguity state) goals of
-    --              Left err -> error $ err -- TODO: Send control question
-    --              Right g  -> [g]
-    goals'   = case goals of
-                  [] -> []
-                  [g] -> g
-                  _   -> []
-    --if length goals > 1 then error "Ambiguity not handled yet" else head goals
+                  Right gs -> resolveAmbiguity state gs
+    goals'    = case goals of -- validate goals
+                  Left err -> error $ show err -- TODO: Send control question
+                  Right g  -> [g]
     plan = if length goals' > 0
              then Planner.solve world holding objects goals' :: Maybe Plan
              else Nothing
@@ -54,7 +48,7 @@ jsonMain jsinput = makeObj result
 
     result = [ ("utterance",    showJSON utterance)
              , ("trees",        showJSON (map show trees))
-             , ("goals",        showJSON $ map show goals)
+             , ("goals",        showJSON $ map show goals')
              , ("plan",         showJSON $ fromMaybe [] plan)
              , ("output",       showJSON output)
              , ("receivedJSON", showJSON $ jsinput)

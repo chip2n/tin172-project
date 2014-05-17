@@ -1,11 +1,16 @@
 \documentclass[11pt]{article}
+
+\usepackage{color}
 \usepackage{eacl2014}
+\usepackage{latexsym}
+\usepackage{listings}
+\usepackage{natbib}
 \usepackage{times}
 \usepackage{url}
-\usepackage{latexsym}
-\usepackage{color}
-\usepackage{listings}
+
 \special{papersize=210mm,297mm}
+
+\bibliographystyle{apalike}
 
 \definecolor{Brown}{cmyk}{0,0.81,1,0.60}
 \definecolor{OliveGreen}{cmyk}{0.64,0,0.95,0.40}
@@ -156,12 +161,12 @@ takegoal movegoal
 \item A `switch' utterance, to let the user switch place of two objects while the rest of the world remains the same
 \item Find the shortest/best solution by some measure
 \item Implement negation for objects, eg. `The non-white ball', and for relations, eg. `A ball which is not on the floor'.
-\item Support for the different quantifiers, `a', `any', `the', `all'.
+\item Support for the different quantifiers, `a', `any', `the', `all'. \cite{APath}
 \end{itemize}
 \newpage
 \input{./contributions.tex}
 
-\section*{References}
-This should be done properly the \LaTeX\, way, but it's just a list for now. \\
-The A* algorithm: http://www.policyalmanac.org/games/aStarTutorial.htm
+\newpage
+\bibliography{references}
+
 \end{document}

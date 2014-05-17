@@ -1,17 +1,19 @@
 module Shrdlite.Interpreter where
 
-import Shrdlite.Common as Common
-import Shrdlite.Grammar as Grammar
 import Control.Monad
 import Control.Monad.Error
 import Control.Monad.Identity
 import Control.Monad.Reader (ReaderT, runReaderT, ask)
 import Data.Either
 import Data.Maybe
+import Data.Map ((!))
 import qualified Data.Map as M
 
+import Shrdlite.Common as Common
+import Shrdlite.Grammar as Grammar
+
 -- | The Interpretation monad. Errors in the interpretation are propagated.
-type Interpretation = ReaderT State (ErrorT InterpretationError Identity) 
+type Interpretation = ReaderT State (ErrorT InterpretationError Identity)
 
 -- | Computes the interpretation with the given world state.
 unInterpret :: State -> Interpretation a -> Either InterpretationError a
@@ -61,9 +63,9 @@ takeEntity :: Entity -> Interpretation [Goal]
 takeEntity ent =
   case ent of
     Floor                    -> throwError $ EntityError "Cannot take floor, ye rascal!"
-    BasicEntity q obj        -> searchObjects obj q Nothing >>= makeGoal
-    RelativeEntity q obj loc -> searchObjects obj q (Just loc) >>= makeGoal
-  where makeGoal found = return $ map (\(i,_) -> TakeGoal (Obj i)) found
+    BasicEntity q obj        -> searchObjects obj q Nothing >>= makeGoal q
+    RelativeEntity q obj loc -> searchObjects obj q (Just loc) >>= makeGoal q
+  where makeGoal q found = return $ map (\(i,_) -> TakeGoal (Obj q i)) found
 
 -- | Generates a list of MoveGoals with the provided Location, using the
 -- currently held item as the entity to move.
@@ -72,24 +74,25 @@ dropAtLocation (Relative rel ent) = do
   state <- ask
   let hold = fromJust $ holding state
   case ent of
-    Floor                    -> return [MoveGoal rel (Obj hold) Flr]
-    BasicEntity q obj        -> searchObjects obj q Nothing    >>= makeGoal hold
-    RelativeEntity q obj loc -> searchObjects obj q (Just loc) >>= makeGoal hold
-  where makeGoal hold found = return $ map (\(i,_) -> MoveGoal rel (Obj hold) (Obj i)) found
+    Floor                    -> return [MoveGoal rel (Obj The hold) Flr] -- Assuming unique holding, so "The" quantifier
+    BasicEntity q obj        -> searchObjects obj q Nothing    >>= makeGoal q hold
+    RelativeEntity q obj loc -> searchObjects obj q (Just loc) >>= makeGoal q hold
+  where makeGoal q hold found = return $ map (\(i,_) -> MoveGoal rel (Obj q hold) (Obj q i)) found
 
 -- | Generates a list of MoveGoals with the provided Entity and Location.
 moveEntity :: Entity -> Maybe Location -> Interpretation [Goal]
 moveEntity ent (Just (Relative rel ent2)) = do
-  movingEntities <- findEntity ent  -- TODO: MUST CONSIDER ALL
+  movingEntities <- findEntity ent
+  let movQ = getQuantifier ent
   case ent2 of
-    Floor -> return $ map (\movingEntity -> MoveGoal rel (Obj movingEntity) Flr) movingEntities
-    BasicEntity q obj -> searchObjects obj q Nothing >>= makeGoal movingEntities
-    RelativeEntity q obj loc -> searchObjects obj q (Just loc) >>= makeGoal movingEntities
-  where makeGoal movingEntities found = 
+    Floor -> return $ map (\movingEntity -> MoveGoal rel (Obj movQ movingEntity) Flr) movingEntities
+    BasicEntity relQ obj -> searchObjects obj relQ Nothing >>= makeGoal movQ relQ movingEntities
+    RelativeEntity relQ obj loc -> searchObjects obj relQ (Just loc) >>= makeGoal movQ relQ movingEntities
+  where makeGoal movQ relQ movingEntities found =
           if null found
             then throwError $ EntityError "No matching entities."
             else return $ concatMap (\movingEntity -> map (\(i,_) ->
-                MoveGoal rel (Obj movingEntity) (Obj i)) found) movingEntities
+                MoveGoal rel (Obj movQ movingEntity) (Obj relQ i)) found) movingEntities
 
 -- | Searches the world state after objects matching the provided quantifier and
 -- location.
@@ -106,7 +109,7 @@ searchObjects obj quant mloc = do
       case quant of
         All -> return foundObjects -- TODO
         _   -> filterM (\(i,o) -> locationHolds (i,o) loc) foundObjects
-  where 
+  where
     ids state = case holding state of
             Nothing      -> concat $ world state
             Just holdId  -> holdId : concat (world state)
@@ -123,7 +126,7 @@ locationHolds (ide, _) (Relative rel ent) = do
     Nothing     -> throwError $ EntityError "Could not find a valid entity."
     Just (_, _) -> anyValid $
       case rel of
-        Beside  -> anyC [rightof] ide entityIds
+        Beside  -> anyC [rightof, leftof] ide entityIds
         Leftof  -> allC [leftof] ide entityIds
         Rightof -> allC [rightof] ide entityIds
         Above   -> allC [sameColumn, above] ide entityIds
@@ -133,6 +136,7 @@ locationHolds (ide, _) (Relative rel ent) = do
 
   where anyValid is = liftM or is
         allValid is = liftM and is
+        allC :: [(Id -> Id -> Interpretation Bool)] -> Id -> [Id] -> Interpretation [Bool]
         allC fs i1 is = sequence $ map (\i2 -> allValid $ sequence $ map (\f -> f i1 i2) fs) is
         anyC fs i1 is = sequence $ map (\i2 -> anyValid $ sequence $ map (\f -> f i1 i2) fs) is
 
@@ -165,39 +169,29 @@ inside :: Id -> Id -> Interpretation Bool
 inside i1 i2 = do
   state <- ask
   ontopResult <- ontop i1 i2
-  return $ ontopResult && getForm (objects state M.! i2) == Box
+  return $ ontopResult && getForm (objects state ! i2) == Box
 
 -- | Checks if the first object is on top of the second.
 ontop :: Id -> Id -> Interpretation Bool
-ontop i1 i2 = do
-  state <- ask
-  liftM2 (\a b -> a - b == 1) (findObjHeight i1) (findObjHeight i2)
+ontop i1 i2 = liftM2 (\a b -> a - b == 1) (findObjHeight i1) (findObjHeight i2)
 
 -- | Checks if the first object is above the second.
 above :: Id -> Id -> Interpretation Bool
-above i1 i2 = do
-  state <- ask
-  liftM2 (>) (findObjHeight i1) (findObjHeight i2)
+above i1 i2 = liftM2 (>) (findObjHeight i1) (findObjHeight i2)
 
 -- | Checks if the first object is under the second.
 under :: Id -> Id -> Interpretation Bool
-under i1 i2 = do
-  state <- ask
-  liftM2 (<) (findObjHeight i1) (findObjHeight i2)
+under i1 i2 = liftM2 (<) (findObjHeight i1) (findObjHeight i2)
 
 -- | Checks if the first object is to the left of the second.
 leftof :: Id -> Id -> Interpretation Bool
-leftof i1 i2 = do
-  state <- ask
-  liftM2 (\a b -> a - b == (-1)) (findObjColumn i1) (findObjColumn i2)
+leftof i1 i2 = liftM2 (\a b -> a - b == (-1)) (findObjColumn i1) (findObjColumn i2)
 
 -- | Checks if the first object is to the right of the second.
 rightof :: Id -> Id -> Interpretation Bool
-rightof i1 i2 = do
-  state <- ask
-  liftM2 (\a b -> a - b == 1) (findObjColumn i1) (findObjColumn i2)
+rightof i1 i2 = liftM2 (\a b -> a - b == 1) (findObjColumn i1) (findObjColumn i2)
 
--- | Finds a single entity 
+-- | Finds a single entity
 findSingleEntity :: Entity -> Interpretation Id
 findSingleEntity entity = do
   found <- findEntity entity
@@ -205,7 +199,7 @@ findSingleEntity entity = do
     [] -> throwError $ EntityError ("Could not find entity " ++ show entity)
     _  -> return $ head found
 
--- | Finds all object ids matching the entity in the provided state        
+-- | Finds all object ids matching the entity in the provided state
 findEntity :: Entity -> Interpretation [Id]
 findEntity ent = case ent of
     Floor                    -> return []
@@ -216,3 +210,9 @@ findEntity ent = case ent of
 column :: State -> Id -> Maybe [Id]
 column state ident = fmap (\pos -> world state !! fst pos) i
   where i = findObjPos ident (world state)
+
+-- | Finds the quantifier from an entity
+getQuantifier :: Entity -> Quantifier
+getQuantifier Floor                   = The
+getQuantifier (BasicEntity q _)       = q
+getQuantifier (RelativeEntity q _ _)  = q
