@@ -12,7 +12,7 @@ graph, but with the heuristics. The number of objects above a given object
 turned out to be a very bad idea, and twice that number is much closer to
 reality. This cut our search space down from 7000 nodes (basically bredth-first
 search) to 40 nodes visited when picking up an object with about five objects
-above it. More of our heuristics can be found in table~\ref{tab:heuristics}.
+above it.
 
 \begin{description}
   \item[Take] Firstly the hueristics checks what am I holding at the moment. If
@@ -35,7 +35,7 @@ above it. More of our heuristics can be found in table~\ref{tab:heuristics}.
     to pick up and drop down an object. After which it took three aditional
     steps, one for puting the object down before clearing away the smallest
     column and then two steps to pick the object up and drop it down on the
-    floor. 
+    floor.
   \item[Ontop] The utterance started of by checking what it was holding. If it
     was the object we wished to place on the second one then we only checked how
     maney objects were place on it and for each object we count two steps to
