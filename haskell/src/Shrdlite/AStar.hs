@@ -17,12 +17,11 @@ data AStarState c = AStarState { closed   :: !(S.Set WorldHolding)
 
 -- | Find the best path from the initial node to (one of) the goal state(s).
 -- Gives this in the form of a 'Plan'.
-aStar :: (Ord c, Num c)
-        => (WorldHolding -> S.Set WorldHolding) -- ^ Graph to search through
-        -> (WorldHolding -> c)                  -- ^ Heuristic distance to the goal
-        -> (WorldHolding -> Bool)               -- ^ Goal check function
-        -> WorldHolding                         -- ^ Starting point
-        -> Maybe Plan                           -- ^ Resulting path if it exists
+aStar :: (WorldHolding -> S.Set WorldHolding) -- ^ Graph to search through
+        -> (WorldHolding -> Int)              -- ^ Heuristic distance to the goal
+        -> (WorldHolding -> Bool)             -- ^ Goal check function
+        -> WorldHolding                       -- ^ Starting point
+        -> Maybe Plan                         -- ^ Resulting path if it exists
 aStar graph heur check start =
     aStar' initState graph heur check
   where initState = AStarState {closed = S.empty,
@@ -31,10 +30,9 @@ aStar graph heur check start =
                                 parent = M.empty}
 
 -- | Much like 'aStar', but also takes an initial state
-aStar' :: (Ord c, Num c)
-        => AStarState c                         -- ^ Initial state
+aStar' :: AStarState Int                        -- ^ Initial state
         -> (WorldHolding -> S.Set WorldHolding) -- ^ Graph to search through
-        -> (WorldHolding -> c)                  -- ^ Heuristic distance to the goal
+        -> (WorldHolding -> Int)                -- ^ Heuristic distance to the goal
         -> (WorldHolding -> Bool)               -- ^ Goal check function
         -> Maybe Plan                           -- ^ Resulting path if it exists
 aStar' s g h c = case Q.minView $ open s of -- take best open node
