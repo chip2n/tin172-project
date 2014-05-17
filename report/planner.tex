@@ -1,10 +1,10 @@
 \section*{Planner}
 Take utterence for specific objects.
-Put utterence for spific objects on or inside specific objects.
+Put utterence for specific objects on or inside specific objects.
 
 \subsection*{Heuristics}
 We started out by just implementing the ``take'' utterance, so our heuristics
-were simply the number of objects on top of the sought-after object.  As we
+were simply the number of objects on top of the sought-after object. As we
 continued to add more utterances, that part was left unchanged until we started
 getting major speed issues. We long thought that this was an issue with our
 state being too big, because we saved the whole world in every node of the
@@ -16,6 +16,60 @@ reality. This cut our search space down from 7000 nodes (basically bredth-first
 search) to 40 nodes visited when picking up an object with about five objects
 above it. More of our heuristics can be found in table~\ref{tab:heuristics}.
 
+\begin{description}
+  \item[Take] Firstly the hueristics checks what am I holding at the moment. If
+    the objects id matches the one we wish to take then there are no more step
+    needed. However if it's another object then we need to remove it from the
+    arm which adds one step. Then find the object we are looking for and remove
+    the objects lying above it, this is calculated to two steps for each object.
+    Once all that is done then there is only one more step needed to pick up the
+    object we are after. One the other hand when we are not holding anything
+    then we do the same calculations, but without adding the one step for
+    clearing the arm.
+  \item[Move to floor] A special case was created for puting an object on the
+    floor since the floor otherwise can't be interacted with. The hueristics
+    starts of by checking if there are any empty floor spaces. After which both
+    cases checks what it is holding and if it's the object we wish to place on
+    the floor. If this is true then when there exists a floor space then it's
+    only one step to drop it down, but if it doesn't exist any space then we
+    decided that the number of steps it would take to remove a minimum would be
+    the length of the shortest column multiplied by two since it takes two steps
+    to pick up and drop down an object. After which it took three aditional
+    steps, one for puting the object down before clearing away the smallest
+    column and then two steps to pick the object up and drop it down on the
+    floor. 
+  \item[Ontop] The utterance started of by checking what it was holding. If it
+    was the object we wished to place on the second one then we only checked how
+    maney objects were place on it and for each object we count two steps to
+    remove them in addition to three more steps to put down the first object we
+    were holding then picking it up again and placing it on the second object.
+    On the other hand if it isn't one of the objects we are suppose to handle
+    then we need to remove it from the arm which takes one step, then we need to
+    clear away all the object on the two objects which takes two steps for each.
+    Finaly we move the first object onto the second object which also takes to
+    steps.
+  \item[Inside] Works exactly like the \verb|Ontop| utterance.
+  \item[Beside] This utterance will firstly check if the goal is satisfied and
+    return zero steps. Otherwise it checks what is the arm is holding, if it's
+    nothing then it will look up how maney objects are placed on the two objects
+    and take two steps of each object on the smallest pile to then be moved
+    beside the other object which takes two additional steps. If the arm is
+    holding something then we check whether it is one of the object and then
+    assume it will only take one step to put it in the column beside the other
+    object. Otherwise we need to take a step to free the arm from the object and
+    then go about clearing away the smallest pile of objects on the two objects
+    we wish to place next to eachother as mentioned before.
+  \item[LeftOf] Works much like the \verb|Beside| utterance except we don't have
+    to be as strict since we interpret \verb|LeftOf| as any column as long as
+    it's left of the other objects column.
+  \item[RightOf] Works like the \verb|LeftOf| utterance except right instead.
+  \item[Above] This utterance works as \verb|Ontop| except it checks whether the
+    one of the objects above the second one is the first one.
+  \item[Under] Exactly like \verb|Above| except we have fliped the first with
+    the second object.
+\end{description}
+
+
 \begin{table}[h]
     \begin{tabular}{|l|l|l|}
     \hline
@@ -26,6 +80,13 @@ above it. More of our heuristics can be found in table~\ref{tab:heuristics}.
                   & No                & 1 + 2 * (number of objects
                                         above it)                      \\ \hline
     Move to floor & Yes               & This is too complicated        \\ \hline
+    Ontop         & yes               &                                \\ \hline
+    Inside        & yes               &                                \\ \hline
+    Beside        & yes               &                                \\ \hline
+    LeftOf        & yes               &                                \\ \hline
+    RightOf       & yes               &                                \\ \hline
+    Above         & yes               &                                \\ \hline
+    Under         & yes               &                                \\ \hline
     \end{tabular}
     \caption{The heuristics for different utterances}
 \label{tab:heuristics}
