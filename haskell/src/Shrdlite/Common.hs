@@ -11,6 +11,7 @@ module Shrdlite.Common (
    -- * Datatypes
    , Goal (..)
    , GoalObject (..)
+   , ValidatedGoal (..)
    , State (..)
 
    -- * Functions
@@ -26,10 +27,11 @@ module Shrdlite.Common (
 ) where
 
 import Data.List (elemIndex)
-import Shrdlite.CombinatorParser
-import Shrdlite.Grammar
 import Text.JSON
 import qualified Data.Map as M
+
+import Shrdlite.CombinatorParser
+import Shrdlite.Grammar
 
 type Id = String
 type Objects = M.Map Id Object
@@ -42,14 +44,12 @@ type WorldHolding = (World, Maybe Id)
 data Goal = TakeGoal GoalObject
           | MoveGoal Relation GoalObject GoalObject
           deriving (Show, Eq, Ord)
-data GoalObject = Flr | Obj Id deriving (Show, Eq, Ord)
+data GoalObject = Flr | Obj Quantifier Id deriving (Show, Eq, Ord)
+data ValidatedGoal = SingleGoal Goal -- This goal has to be fulfilled
+                   | OrGoal [Goal] -- Any of these goals are acceptable
+                   | AndGoal [Goal] -- All these goals have to be fulfilled
 data State = State { world :: World, holding :: Maybe Id, objects :: Objects }
   deriving (Show)
-
-data Ambiguity = Ambiguity
-    { controlQuestion :: String
-    , ambiguity       :: [Object]
-    }
 
 instance Eq State where
   s1 == s2 = world s1 == world s2 && holding s1 == holding s2
@@ -136,10 +136,7 @@ validateAllLaws relation o1 o2 =
     Beside  -> True
     Leftof  -> True
     Rightof -> True
-    Above   -> sz o1 < sz o2
-    Ontop   -> validate o1 o2 && form o2 == Box
-    Under   -> sz o1 > sz o2
-    Inside  -> validate o1 o2 && form o2 == Box
-  where form (Object _ _ f) = f
-        sz (Object s _ _)  = s
-        color (Object _ c _) = c
+    Above   -> getSize o1 < getSize o2
+    Ontop   -> validate o1 o2 && getForm o2 /= Box
+    Under   -> getSize o1 > getSize o2
+    Inside  -> validate o1 o2 && getForm o2 == Box
