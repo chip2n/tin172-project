@@ -1,0 +1,55 @@
+\section*{Introduction}
+% 1. Introduction
+% - Foundation of the world
+%   (how spatial relations are interpreted
+%    how goals are seperated)
+We have been working on an artificial intelligence project which has resulted in an interpreter, ambiguity resolver and planner for an organizing robot simulator.
+The robot can react to user commands and move objects in the world accordingly.
+In this report, we will describe some implementation details of the various parts of the application itself, as well as our experiences and dilemmas.
+
+\subsection*{Workflow}
+The group decided to work with an agile workflow, with regular meetings and development sessions.
+With this kind of workflow, we had the ability to handle one utterance at a time.
+To avoid as much overhead of working multiple persons on a single code base, we decided to use git for version control.
+This helped the group to work in different part of the code without conflicts.
+
+We did not, however, use a Scrum tool like PivotalTracker. If we'd done this, the project might have finished quicker - but unfortunately we realized this a bit too late. Instead, we mainly used github's issue tracking system for long-lasting bugs (which there weren't many of).
+
+\subsection*{Notation}
+In order to simplify the work of both us and the reader, we will use a notation for describing function types which is inspired by the native Haskell notation.
+In case the reader is not familiar with this notation - here's an example:
+
+\begin{lstlisting}
+funName :: ArgType $\rightarrow$ ArgType2 $\rightarrow$ ReturnType
+\end{lstlisting}
+
+The notation starts with the function name ("funName"), which is separated from the rest of the type by a double colon ("::").
+Then, the input argument types are separated by arrows ("$\rightarrow$") - with the exception of the last variable, which is always the return type.
+So, to write a function which takes a list of integers and returns a bool, we could write:
+
+\begin{lstlisting}
+foo :: [Int] $\rightarrow$ Bool
+\end{lstlisting}
+
+It is a very concise way to write function types, which is why we've chose to use it. However, this notation will be used sparingly throughout the report to show the most important functions in the various parts of the application.
+
+\subsection*{Relations}
+There are a few object relations which the user can provide via the utterance (or command). These are "beside", "left of", "right of", "above", on top", "under" and "inside". To avoid confusion, we will interpret these in the following way:
+
+\begin{description}
+  \item[Beside] The assumption here was that the two objects should be placed in
+    two columns that are located next to eachother.
+  \item[Leftof] We interpreted this to be that the first object would have to be
+    placed in one of the columns that are left of the right objects column and
+    vice versa.
+  \item[Rightof] Just as in \verb|Leftof|, but the two objects are flipped.
+  \item[Above] This was interpreted to mean that the two objects would be placed
+    in the same column with the first object being above the second one, but
+    there could exist objects between them.
+  \item[Ontop] We took this to mean that the first object needed to be placed
+   strictly on the second object with no objects in between them.
+  \item[Under] This was interpreted just as \verb|Above|, but the two objects
+    were flipped.
+  \item[Inside] We assumed this relation could only be applied to boxes, but
+  otherwise it follows the \verb|Ontop| relation.
+\end{description}
