@@ -1,0 +1,15 @@
+Instructions how to extract and build the package using cabal
+Run the following commands (requires cabal version >= 1.18)
+
+cabal unpack shrdlite.tar.gz
+cd shrdlite-0.1.0.0.tar.gz
+cabal sandbox init
+cabal install --only-dependencies
+cabal configure
+cabal build
+
+The executable will be located in /dist/build/shrdlite/shrdlite
+
+
+The documentation (and source code) is best viewed in a web browser
+Open the file /doc/index.html
