@@ -25,7 +25,6 @@ main = defaultMainWithOpts
         , testCase "findEntityTest2" findEntityTest2
         , testCase "findEntityTest3" findEntityTest3
         , testCase "findEntityTest4" findEntityTest4
-        , testCase "findEntityTest5" findEntityTest5
         ]
     , testGroup "locationHoldsTests"
         [ testCase "locationHoldsTest1" locationHoldsTest1
@@ -99,14 +98,6 @@ findEntityTest4 :: Assertion
 findEntityTest4 = assertBool ("Expected no matching objects, but found: " ++ show foundEntities) (length foundEntities == 0)
     where Right foundEntities = unInterpret startState $ findEntity $ anyRelativeEntity largeWhiteBall besideSmallBrickLocation
 
--- |Checks ambiguities
-findEntityTest5 :: Assertion
-findEntityTest5 = assertBool "Expected ambiguity, but received a correct result." isAmbiguity
-    where foundEntities = unInterpret startState $ findEntity $ BasicEntity The (Object AnySize AnyColor Ball)
-          isAmbiguity = case foundEntities of
-                          Left _  -> True
-                          Right _ -> False
-
 -- |Tests Beside relation
 locationHoldsTest1 :: Assertion
 locationHoldsTest1 = assertBool "Beside location expected to hold, but doesn't" locHolds
@@ -165,7 +156,7 @@ locationHoldsTest7 = assertBool "Inside location expected to hold, but doesn't" 
 
 searchObjectsTest1 :: Assertion
 searchObjectsTest1 = assertBool ("Expected to find " ++ show expected ++ " but found " ++ show found) (expected == found)
-    where expected = Right [("e", largeWhiteBall), ("f", smallBlackBall)] :: Either InterpretationError [(Id, Object)]
+    where expected = Right [("e", largeWhiteBall), ("f", smallBlackBall)] :: Either ShrdliteError [(Id, Object)]
           found    = unInterpret startState $ searchObjects (Object AnySize AnyColor Ball) All Nothing
 
 findObjPosTest1 :: Assertion

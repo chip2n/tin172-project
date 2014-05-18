@@ -30,10 +30,10 @@ jsonMain jsinput = makeObj result
     wrld      = ok      (valFromObj "world"     jsinput)         :: World
     hldng     = maybeOk (valFromObj "holding"   jsinput)         :: Maybe Id
     obj       = parseObjects $ ok (valFromObj "objects" jsinput) :: Objects
-    state     = State wrld hldng obj    
+    state     = State wrld hldng obj
     trees     = parse command utterance :: [Command]
     goals     = case interpretAll state trees of
-                  Left r   -> error $ "Interpretation error: " ++ show r
+                  Left r   -> Left r
                   Right gs -> resolveAmbiguity state gs
     goals'    = case goals of -- validate goals
                   Left _ -> []
@@ -44,8 +44,8 @@ jsonMain jsinput = makeObj result
 
     output
       | null trees            = "Parse error!"
-      | isLeft goals          = fromLeft ambiguityMsg goals
-      | length goals' >= 2    = "Ambiguity error!" -- just OR them
+      | isLeft goals          = fromLeft shrdliteErrorMsg goals
+      | length goals' >= 2    = "Ambiguity error!" -- TODO: just OR them
       | null goals'           = "Interpretation error!"
       | isNothing plan        = "Planning error!"
       | null (fromJust plan)  = "Way ahead of you!"
@@ -57,10 +57,6 @@ jsonMain jsinput = makeObj result
 
     fromLeft :: (a -> c) -> Either a b -> c
     fromLeft f (Left x) = f x
-
-    ambiguityMsg :: AmbiguityError -> String
-    ambiguityMsg (AmbiguityError _ msg) = msg
-    ambiguityMsg (OtherError  msg) = msg
 
     result = [ ("utterance",    showJSON utterance)
              , ("trees",        showJSON (map show trees))

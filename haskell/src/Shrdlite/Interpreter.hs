@@ -13,43 +13,29 @@ import Shrdlite.Common as Common
 import Shrdlite.Grammar as Grammar
 
 -- | The Interpretation monad. Errors in the interpretation are propagated.
-type Interpretation = ReaderT State (ErrorT InterpretationError Identity)
+type Interpretation = ReaderT State (ErrorT ShrdliteError Identity)
 
 -- | Computes the interpretation with the given world state.
-unInterpret :: State -> Interpretation a -> Either InterpretationError a
+unInterpret :: State -> Interpretation a -> Either ShrdliteError a
 unInterpret state a = runIdentity $ runErrorT $ runReaderT a state
 
--- | Data structure for different errors that can show up during the
--- interpretation process.
-data InterpretationError = EntityError String
-                         | InterpretationAmbiguityError [Id]
-                         | InterpretationOtherError String
-                         deriving (Show, Eq)
-
--- | For the ErrorT monad.
-instance Error InterpretationError where
-    noMsg  = InterpretationOtherError ""
-    strMsg = InterpretationOtherError
-
--- | Checks wether the provided error is an InterpretationAmbiguityError.
-isAmbiguityError :: InterpretationError -> Bool
-isAmbiguityError (InterpretationAmbiguityError _) = True
-isAmbiguityError _                  = False
-
 -- | Checks wether the provided error is an EntityError.
-isEntityError :: InterpretationError -> Bool
+isEntityError :: ShrdliteError -> Bool
 isEntityError (EntityError _) = True
 isEntityError _               = False
 
 -- | Interprets all the provided commands in the given state.
-interpretAll :: State -> [Command] -> Either InterpretationError [[Goal]]
-interpretAll state cmds = Right validResults
+interpretAll :: State -> [Command] -> Either ShrdliteError [[Goal]]
+interpretAll state cmds
+  | not $ null validResults = Right validResults
+  | not $ null results      = Left . head $ lefts results
+  | otherwise               = Right []
   where results      = map (interpret state) cmds
         validResults = rights results
 
 -- | Converts a parse tree into a PDDL representation of the final
 -- goal of the command
-interpret :: State -> Command -> Either InterpretationError [Goal]
+interpret :: State -> Command -> Either ShrdliteError [Goal]
 interpret state cmd = unInterpret state $ interpret' cmd
 
 -- | Takes a command and tries to interpret it into a PDDL representation.
