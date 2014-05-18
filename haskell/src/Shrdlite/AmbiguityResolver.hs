@@ -96,9 +96,30 @@ findAmbiguity True s gs = unless (S.size s == 1) $ do
 
 -- | Finds the objects in the set and shows them in an appropriate manner
 showObjects :: Objects -> S.Set Id -> String
-showObjects os s = foldr1 showOr $ map (show . (os !)) $ S.elems s
-  where
-    showOr x y = x ++ " or " ++ y
+showObjects os s = showObjectHelper sizeEq colrEq objs
+   where attribs = getObjectAttribs objs
+         objs    = map (os !) $ S.elems s
+         sizeEq  = allEqual $ map fst attribs
+         colrEq  = allEqual $ map snd attribs
+
+showObjectHelper :: Bool -> Bool -> [Object] -> String
+showObjectHelper _   _   []                   = ""
+showObjectHelper sEq cEq [Object size color form] =
+                              "the " ++ sString ++ cString ++ show form
+         where sString = if sEq then "" else show size  ++ " "
+               cString = if cEq then "" else show color ++ " "
+showObjectHelper sEq cEq ((Object size color form):rest) =
+                              "the " ++ sString ++ cString ++ show form
+                              ++ " or " ++ showObjectHelper sEq cEq rest
+         where sString = if sEq then "" else show size  ++ " "
+               cString = if cEq then "" else show color ++ " "
+
+getObjectAttribs :: [Object] -> [(Size, Color)]
+getObjectAttribs [] = []
+getObjectAttribs ((Object size color _):os) = (size, color):(getObjectAttribs os)
+
+allEqual :: Eq a => [a] -> Bool
+allEqual xs = all (== head xs) xs
 
 -- | Gets all the possible goals
 validGoals :: [Goal] -> Ambiguity [Goal]
