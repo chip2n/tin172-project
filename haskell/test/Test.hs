@@ -53,11 +53,21 @@ main = defaultMainWithOpts
         , testCase "validateObjectTest6" validateObjectTest6
         , testCase "validateObjectTest7" validateObjectTest7
         ]
+    , testGroup "checkTests"
+        [ testCase "checkTest1" checkTest1
+        , testCase "checkTest2" checkTest2
+        , testCase "checkTest3" checkTest3
+        , testCase "checkTest4" checkTest4
+        , testCase "checkTest5" checkTest4
+        , testCase "checkTest6" checkTest4
+        , testCase "checkTest7" checkTest4
+        , testCase "checkTest8" checkTest4
+        ]
     ] mempty
 
 -- |Tests the interpreter
 interpretTest1 :: Assertion
-interpretTest1 = assertBool "Interpret failed." (length result == 1 && (head result) == MoveGoal Ontop (Obj "f") Flr)
+interpretTest1 = assertBool "Interpret failed." (length result == 1 && (head result) == MoveGoal Ontop (Obj The "f") Flr)
   where cmd = Move (RelativeEntity The anyBall (Relative Inside (BasicEntity The (Object AnySize Blue Box)))) (Relative Ontop Floor)
         Right result = interpret startState cmd
 
@@ -66,7 +76,6 @@ interpretTest2 :: Assertion
 interpretTest2 = assertBool "Interpret failed." (isEntityError result)
   where cmd =	Move (BasicEntity The (Object AnySize AnyColor Ball)) (Relative Inside (RelativeEntity The (Object AnySize Blue Box) (Relative Ontop Floor)))
         Left result = interpret startState cmd
-        
 
 -- |Tries to find any white large ball.
 findEntityTest1 :: Assertion
@@ -103,7 +112,7 @@ locationHoldsTest1 :: Assertion
 locationHoldsTest1 = assertBool "Beside location expected to hold, but doesn't" locHolds
     where Right locHolds = unInterpret startState $ locationHolds (id, obj) loc
           id       = "l"
-          obj      = Object Large AnyColor Box 
+          obj      = Object Large AnyColor Box
           loc      = Relative Beside (BasicEntity Any largeWhiteBall)
 
 -- |Tests Leftof relation
@@ -119,7 +128,7 @@ locationHoldsTest3 :: Assertion
 locationHoldsTest3 = assertBool "Rightof location expected to hold, but doesn't" locHolds
     where Right locHolds = unInterpret startState $ locationHolds (id, obj) loc
           id       = "l"
-          obj      = Object Large AnyColor Box 
+          obj      = Object Large AnyColor Box
           loc      = Relative Rightof (BasicEntity Any largeWhiteBall)
 
 -- |Tests Above relation
@@ -135,7 +144,7 @@ locationHoldsTest5 :: Assertion
 locationHoldsTest5 = assertBool "Ontop location expected to hold, but doesn't" locHolds
     where Right locHolds = unInterpret startState $ locationHolds (id, obj) loc
           id       = "l"
-          obj      = Object Large AnyColor Box 
+          obj      = Object Large AnyColor Box
           loc      = Relative Ontop (BasicEntity Any (Object AnySize AnyColor Table))
 
 -- |Tests Under relation
@@ -215,7 +224,7 @@ validateObjectTest6 = assertBool "I managed to place a plank/pyramid inside a bo
       oc :: Size -> Form -> Object
       oc sz frm = (Object sz White frm)
 
---Boxes can only be supported by tables or planks of the same size, but large boxes can also be supported by large bricks
+-- | Boxes can only be supported by tables or planks of the same size, but large boxes can also be supported by large bricks
 validateObjectTest7 :: Assertion
 validateObjectTest7 = assertBool "I managed to place a box on something other than a table or plank (or large brick for large box)"
   $ and $ [(validate (oc Large Box) p) | p <- map (oc Large) [Table,Plank,Brick]]
@@ -225,7 +234,53 @@ validateObjectTest7 = assertBool "I managed to place a box on something other th
     where
       oc :: Size -> Form -> Object
       oc sz frm = (Object sz White frm)
-      
+
+-- | Tests if a take goal is fullfilled when holding the requested object
+checkTest1 :: Assertion
+checkTest1 = assertBool "I could not see that I'm already holding the requested object" $
+   check (TakeGoal (Obj The "a")) (smallWorld, Just "a")
+
+-- | Tetss if it finds the correct id of what it is holding
+checkTest2 :: Assertion
+checkTest2 = assertBool "I thought I held something that I didn't" $
+   and $ [ not $ check (TakeGoal (Obj The "a")) (smallWorld, Just "b")
+         , not $ check (TakeGoal (Obj The "a")) (smallWorld, Nothing)]
+
+-- | Tests Ontop Goal
+checkTest3 :: Assertion
+checkTest3 = assertBool "I could not verify the Ontop relation" $
+   and $ [ check (MoveGoal Ontop (Obj The "a") (Obj The "b")) ([["b", "a"], []], Nothing)
+         , not $ check (MoveGoal Ontop (Obj The "a") (Obj The "b")) ([["a"],["b"]], Nothing)]
+
+-- | Tests Beside Goal
+checkTest4 :: Assertion
+checkTest4 = assertBool "I could not verify the Beside relation" $
+   and $ [ check (MoveGoal Beside (Obj The "a") (Obj The "b")) ([["a"], ["b"]], Nothing)
+         , not $ check (MoveGoal Beside (Obj The "a") (Obj The "b")) ([["a", "b"], []], Nothing)]
+
+-- | Tests Leftof Goal
+checkTest5 :: Assertion
+checkTest5 = assertBool "I could not verify the Leftof relation" $
+   and $ [ check (MoveGoal Leftof (Obj The "a") (Obj The "b")) ([["a"], [], ["b"]], Nothing)
+         , not $ check (MoveGoal Leftof (Obj The "a") (Obj The "b")) ([["a", "b"], []], Nothing)]
+
+-- | Tests Rightof Goal
+checkTest6 :: Assertion
+checkTest6 = assertBool "I could not verify the Rightof relation" $
+   and $ [ check (MoveGoal Rightof (Obj The "a") (Obj The "b")) ([["b"], [], ["a"]], Nothing)
+         , not $ check (MoveGoal Rightof (Obj The "a") (Obj The "b")) ([["a", "b"], []], Nothing)]
+
+-- | Tests Above Goal
+checkTest7 :: Assertion
+checkTest7 = assertBool "I could not verify the Above relation" $
+   and $ [ check (MoveGoal Above (Obj The "a") (Obj The "c")) ([["c", "b", "a"], []], Nothing)
+         , not $ check (MoveGoal Above (Obj The "a") (Obj The "b")) ([["a"], ["b"]], Nothing)]
+
+-- | Tests Under Goal
+checkTest8 :: Assertion
+checkTest8 = assertBool "I could not verify the Under relation" $
+   and $ [ check (MoveGoal Under (Obj The "a") (Obj The "c")) ([["a", "b", "c"], []], Nothing)
+         , not $ check (MoveGoal Under (Obj The "a") (Obj The "b")) ([["a"], ["b"]], Nothing)]
 
 -- | A list of all the given forms used to create all possible objects.
 forms :: [Form]
@@ -270,6 +325,9 @@ startState = Common.State world holding objects
         world   = (ok (valFromObj "world" (ok . decode $ testWorld "take the white ball"))) :: World
         holding = Nothing :: Maybe Id
         objects = parseObjects $ (ok (valFromObj "objects" (ok . decode $ testWorld "take the white ball"))) :: Objects
+
+smallWorld :: World
+smallWorld = [["e"], ["g", "l"], [], ["k", "m", "f"], []]
 
 testWorld :: String -> String
 testWorld utterance = "{ \"world\": [ [ \"e\" ], [ \"g\", \"l\" ], [], [ \"k\", \"m\", \"f\" ], [] ], \"objects\": { \"a\": { \"form\": \"brick\", \"size\": \"large\", \"color\": \"green\" }, \"b\": { \"form\": \"brick\", \"size\": \"small\", \"color\": \"white\" }, \"c\": { \"form\": \"plank\", \"size\": \"large\", \"color\": \"red\" }, \"d\": { \"form\": \"plank\", \"size\": \"small\", \"color\": \"green\" }, \"e\": { \"form\": \"ball\", \"size\": \"large\", \"color\": \"white\" }, \"f\": { \"form\": \"ball\", \"size\": \"small\", \"color\": \"black\" }, \"g\": { \"form\": \"table\", \"size\": \"large\", \"color\": \"blue\" }, \"h\": { \"form\": \"table\", \"size\": \"small\", \"color\": \"red\" }, \"i\": { \"form\": \"pyramid\", \"size\": \"large\", \"color\": \"yellow\" }, \"j\": { \"form\": \"pyramid\", \"size\": \"small\", \"color\": \"red\" }, \"k\": { \"form\": \"box\", \"size\": \"large\", \"color\": \"yellow\" }, \"l\": { \"form\": \"box\", \"size\": \"large\", \"color\": \"red\" }, \"m\": { \"form\": \"box\", \"size\": \"small\", \"color\": \"blue\" } }, \"holding\": null, \"utterance\":" ++ show (words utterance) ++ "}"
