@@ -33,12 +33,12 @@ import qualified Data.Map as M
 import Shrdlite.CombinatorParser
 import Shrdlite.Grammar
 
-type Id = String
-type Objects = M.Map Id Object
-type Plan = [String]
-type Utterance = [String]
-type World = [[Id]]
-type WorldChange = (Int, [Id]) -- The changed column id and the new column
+type Id           = String
+type Objects      = M.Map Id Object
+type Plan         = [String]
+type Utterance    = [String]
+type World        = [[Id]]
+type WorldChange  = (Int, [Id]) -- The changed column id and the new column
 type WorldHolding = (World, Maybe Id)
 
 data Goal = TakeGoal GoalObject
@@ -104,29 +104,29 @@ form' = lexicon [(Brick,   ["brick"]),
 
 -- | Unwrapper for the result type
 ok :: Result a -> a
-ok (Ok res) = res
+ok (Ok res)    = res
 ok (Error err) = error err
 
 -- | Converts a Result into a Maybe
 -- Returns Nothing in case of Error otherwise it returns Just value
 maybeOk :: Result a -> Maybe a
-maybeOk (Ok res) = Just res
+maybeOk (Ok res)  = Just res
 maybeOk (Error _) = Nothing
 
 -- | Tests whether the first object can be placed immediately above the second
 -- object without violating the given constraints.
 validate :: Object -> Object -> Bool
-validate _                         (Object _     _ Ball)  = False
-validate (Object s1     _ Ball)    (Object s2    _ Box)   = s1 <= s2
-validate (Object _      _ Ball)    _                      = False
-validate (Object s1     _ Pyramid) (Object s2    _ Box)   = s1 < s2
-validate (Object s1     _ Plank)   (Object s2    _ Box)   = s1 < s2
-validate (Object s1     _ Box)     (Object s2    _ Plank) = s1 == s2
-validate (Object s1     _ Box)     (Object s2    _ Table) = s1 == s2
-validate (Object Large  _ Box)     (Object Large _ Brick) = True
-validate (Object s1     _ Box)     (Object s2    _ Box  ) = s1 < s2
-validate (Object _      _ Box)     _                      = False
-validate (Object s1     _ _)       (Object s2    _ _)     = s1 <= s2
+validate _                        (Object _     _ Ball)  = False
+validate (Object s1    _ Ball)    (Object s2    _ Box)   = s1 <= s2
+validate (Object _     _ Ball)    _                      = False
+validate (Object s1    _ Pyramid) (Object s2    _ Box)   = s1 < s2
+validate (Object s1    _ Plank)   (Object s2    _ Box)   = s1 < s2
+validate (Object s1    _ Box)     (Object s2    _ Plank) = s1 == s2
+validate (Object s1    _ Box)     (Object s2    _ Table) = s1 == s2
+validate (Object Large _ Box)     (Object Large _ Brick) = True
+validate (Object s1    _ Box)     (Object s2    _ Box  ) = s1 < s2
+validate (Object _     _ Box)     _                      = False
+validate (Object s1    _ _)       (Object s2    _ _)     = s1 <= s2
 
 -- | Validates all physical laws. This does not look if the objects exists in the
 -- world, and it does not care about their locations.
