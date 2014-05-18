@@ -16,7 +16,8 @@ instance Functor (Parser t) where
 
 instance Applicative (Parser t) where
     pure a = Parser (\ts -> [(ts, a)])
-    Parser p <*> Parser q = Parser (\ts -> [(ts'', f a) | (ts', f) <- p ts, (ts'', a) <- q ts'])
+    Parser p <*> Parser q =
+      Parser (\ts -> [(ts'', f a) | (ts', f) <- p ts, (ts'', a) <- q ts'])
 
 instance Alternative (Parser t) where
     empty = Parser (const [])
@@ -25,7 +26,7 @@ instance Alternative (Parser t) where
 token :: Eq t => t -> Parser t t
 token t = Parser (\ts -> case ts of
                            t':ts' | t == t' -> [(ts', t')]
-                           _ -> [])
+                           _                -> [])
 
 -- Convenience parsers
 
@@ -34,8 +35,6 @@ anyof = F.asum
 
 tokens :: Eq t => [t] -> Parser t [t]
 tokens = foldr (\ x -> (<*>) ((:) <$> token x)) (pure [])
---tokens [] = pure []
---tokens (x:xs) = (:) <$> token x <*> tokens xs
 
 lexicon :: [(a, [String])] -> Parser String a
 lexicon alts = anyof [a <$ anyof (map (tokens.words) alt) | (a, alt) <- alts]
