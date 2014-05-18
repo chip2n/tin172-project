@@ -31,6 +31,7 @@
     showspaces=false,                       % Dont make spaces visible
     showtabs=false,                         % Dont make tabls visible
     framesep=3pt,
+    mathescape=true,
     xleftmargin=3pt,
     xrightmargin=3pt
 }
@@ -100,21 +101,30 @@
 % 8 pages + appendix/references
 
 \section*{Introduction}
-% Short introduction can go here
+We have been working on an artificial intelligence project which has resulted in an interpreter, ambiguity resolver and planner for an organizing robot.
+The robot can react to user commands and move objects in the world accordingly.
+In this report, we will describe some implementation details of the various parts of the application.
 
-In this report, we will use Haskell notation for function types.
+\subsection*{Notation}
+In order to simplify the work of both us and the readers, we will use a notation for describing function types which is inspired by the native Haskell notation.
 In case the reader is not familiar with this notation - here's an example:
 
 \begin{lstlisting}
-funName :: Arg1 -> Arg2 -> ReturnType
+funName :: ArgType $\rightarrow$ ArgType2 $\rightarrow$ ReturnType
 \end{lstlisting}
 
-The last variable is always the return type. So, to write a function which takes a list of integers and returns a bool, we could write:
+The notation starts with the function name ("funName"), which is separated from the rest of the line by "::".
+Then, the input argument types are separated by arrows ("$\rightarrow$") - with the exception of the last variable, which is always the return type.
+So, to write a function which takes a list of integers and returns a bool, we could write:
 
 \begin{lstlisting}
-foo :: [Int] -> Bool
+foo :: [Int] $\rightarrow$ Bool
 \end{lstlisting}
 
+This notation will be used sparingly throughout the report to show the most important functions in the various parts of the application.
+
+\subsection*{Assumptions}
+We have made the following assumptions of the relations between two objects:
 \begin{description}
   \item[Beside] The assumption here was that the two objects should be placed in
     two columns that are located next to eachother.

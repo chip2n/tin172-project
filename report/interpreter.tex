@@ -7,7 +7,7 @@ And the goal of the interpreter is to interpret a user command into a list of po
 Using these observations, the type would be:
 
 \begin{lstlisting}
-interpret :: State -> Command -> Either InterpretationError [Goal]
+interpret :: State $\rightarrow$ Command $\rightarrow$ Either InterpretationError [Goal]
 \end{lstlisting}
 
 We decided to make a monadic interface for the interpreter, which is why the return type looks a bit funky.

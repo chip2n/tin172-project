@@ -4,8 +4,20 @@
 
 \section*{Ambiguity resolver}
 The ambiguity resolver needs the state of the world and all the possible goals that could be interpreted from the input.
-Once we have the goals we checks all of them if the laws of physics will apply on all of them.
-The check is simple, depending on what kind of goal (move- or takegoals) is being checked.
+The type of this function can therefore be written as:
+\begin{lstlisting}
+resolveAmbiguity :: State $\rightarrow$ [[Goal]] $\rightarrow$ Either AmbiguityError Goal
+\end{lstlisting}
+
+So, the return type of our ambiguity resolver is either an error (in case of ambiguities due to quantifiers or other reasons) or a single goal which will be sent to the planner.
+
+\subsection*{Physical laws}
+Once we have received the goals from the input of the main ambiguity resolver function, we need to check all of them if the laws of physics will apply on all of them.
+The check is fairly simple.
+We iterate over the list of goals, check which type of goal it is (move or take goals), and process them each to remove any impossible goals.
+Notable examples that are being removed in this stage are if the user decides to pick up the floor, or if the user tries to place a brick on top of a ball (which violates the physical laws.
+
+\subsection*{Quantifier check}
 After which we check if the quantifiers makes any of the goals obsolete. %TODO go inte more detail
 
 % The current ambiguity resolver i very simple. It just checks the number of
