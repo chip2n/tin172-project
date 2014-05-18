@@ -13,20 +13,12 @@ import qualified Data.Set as S
 import Shrdlite.Grammar
 import Shrdlite.Common as Common
 
-type Ambiguity = ReaderT State (ErrorT AmbiguityError Identity)
+type Ambiguity = ReaderT State (ErrorT ShrdliteError Identity)
 
-data AmbiguityError = AmbiguityError [Goal] String
-                    | OtherError String
-                    deriving (Show, Eq, Ord)
-
-unAmbiguity :: State -> Ambiguity a -> Either AmbiguityError a
+unAmbiguity :: State -> Ambiguity a -> Either ShrdliteError a
 unAmbiguity state a = runIdentity $ runErrorT $ runReaderT a state
 
-instance Error AmbiguityError where
-    noMsg  = AmbiguityError [] ""
-    strMsg = AmbiguityError []
-
-resolveAmbiguity :: State -> [[Goal]] -> Either AmbiguityError Goal
+resolveAmbiguity :: State -> [[Goal]] -> Either ShrdliteError Goal
 resolveAmbiguity state goals =
   case validResults of
     [] -> case length results of
@@ -37,10 +29,10 @@ resolveAmbiguity state goals =
             0 -> Left $ OtherError "No valid goals."
             1 -> Right $ head validResults
             _ -> Left $ AmbiguityError validResults "INSERT AMBIGUITY QUESTION HERE" -- TODO
-  where results = map (resolveAmbiguity' state) goals :: [Either AmbiguityError Goal]
+  where results = map (resolveAmbiguity' state) goals :: [Either ShrdliteError Goal]
         validResults = rights results
 
-resolveAmbiguity' :: State -> [Goal] -> Either AmbiguityError Goal
+resolveAmbiguity' :: State -> [Goal] -> Either ShrdliteError Goal
 resolveAmbiguity' state goals = unAmbiguity state (computation goals)
 
 computation :: [Goal] -> Ambiguity Goal
@@ -55,7 +47,7 @@ computation goals = do
 pickOne :: [Goal] -> Ambiguity Goal
 pickOne [] = throwError $ OtherError "No valid goal."
 pickOne [g] = return g
--- pickOne gs = throwError $ AmbiguityError gs "INSERT AMBIGUITY QUESTION HERE" -- TODO
+-- pickOne gs = throwError $ ShrdliteError gs "INSERT AMBIGUITY QUESTION HERE" -- TODO
 pickOne (g:gs) = do
   foldM_ sameGoalType g gs
   let (leftIds, rightIds) = foldr addObjects (S.empty, S.empty) (g:gs)
@@ -93,16 +85,14 @@ findThe g (l, r) = case g of
 
 -- | If the first argument is @False@, there is no ambiguity. Otherwise, there
 -- is an amibiguity if there are serveral @Ids@ in the set, and then an
--- @AmbiguityError@ is thrown
+-- @ShrdliteError@ is thrown
 findAmbiguity :: Bool -> S.Set Id -> [Goal] -> Ambiguity ()
 findAmbiguity False _ _ = return ()
-findAmbiguity True s gs = if S.size s == 1
-  then return ()
-  else do
-    state <- ask
-    let os = objects state
-    throwError $ AmbiguityError gs $
-      "Ambiguity: you could mean " ++ showObjects os s
+findAmbiguity True s gs = unless (S.size s == 1) $ do
+  state <- ask
+  let os = objects state
+  throwError $ AmbiguityError gs $
+    "You could mean " ++ showObjects os s
 
 -- | Finds the objects in the set and shows them in an appropriate manner
 showObjects :: Objects -> S.Set Id -> String

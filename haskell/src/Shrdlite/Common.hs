@@ -13,8 +13,11 @@ module Shrdlite.Common (
    , GoalObject (..)
    , ValidatedGoal (..)
    , State (..)
+   , ShrdliteError (..)
 
    -- * Functions
+   , shrdliteErrorMsg
+   , isAmbiguityError
    , findObjPos
    , maybeOk
    , ok
@@ -26,6 +29,7 @@ module Shrdlite.Common (
    , getForm
 ) where
 
+import Control.Monad.Error
 import Data.List (elemIndex)
 import Text.JSON
 import qualified Data.Map as M
@@ -57,6 +61,28 @@ instance Eq State where
 
 instance Ord State where
   compare s1 s2 = compare (world s1) (world s2)
+
+-- | Data structure for different errors that can show up during a Shrdlite run
+data ShrdliteError = EntityError String
+                   | AmbiguityError [Goal] String
+                   | OtherError String
+                   deriving (Show, Eq, Ord)
+
+-- | Gets the message from en error
+shrdliteErrorMsg :: ShrdliteError -> String
+shrdliteErrorMsg (EntityError msg)      = "Interpretation error: " ++ msg
+shrdliteErrorMsg (AmbiguityError _ msg) = "Ambiguity error: " ++ msg
+shrdliteErrorMsg (OtherError  msg)      = "Error: " ++ msg
+
+-- | Checks wether the provided error is an AmbiguityError.
+isAmbiguityError :: ShrdliteError -> Bool
+isAmbiguityError (AmbiguityError _ _) = True
+isAmbiguityError _                  = False
+
+-- | For the ErrorT monad.
+instance Error ShrdliteError where
+    noMsg  = OtherError ""
+    strMsg = OtherError
 
 getSize :: Object -> Size
 getSize (Object s _ _) = s
