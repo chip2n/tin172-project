@@ -1,7 +1,15 @@
 \section*{Parser}
 The input to the application is in the shape of a JSON string containing the world state, the user's utterance and other information that the interpreter and planner needs.
 This string is sent from the web interface that was provided for us.
-
 When the application receives the JSON string, it parses it into a bunch of useful data structures which we can later use in various parts of the application.
 Much of this code was provided along with the web interface - we've only extended the parser with a few convenience functions for object comparisons.
-We also extended the parsing to specifig data structures like the world state and an object map which maps object ids to their corresponding descriptions.
+We also extended the parsing to specific data structures like the world state and an object map which maps object ids to their corresponding descriptions.
+
+\subsection*{State}
+The data type representing world state is, in our case, very simple.
+It contains the world obtained from the JSON parser, which is just a list of lists where each inner list represents a stack of object ids.
+The State data type also contains the object Id of the currently held object and, of course, a map for receiving object descriptions based on their object id. This is all the information we need for the interpreter regarding the world and, as it turns out, also all we need for the Planner and Ambiguity Resolver.
+
+\subsection*{Command}
+A command is created from the user's utterance. This can be one of three data types - Take, Put and Move - depending on the utterance.
+They contain a description of the objects, and this is used later in the interpreter to convert it to goals for the ambiguity resolver and planner.
