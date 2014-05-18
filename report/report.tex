@@ -79,11 +79,9 @@
 
 \section*{Extensions}
 \begin{itemize}
-\item Ambiguity resolution by asking follow-up questions, eg. ` Did you mean the blue or the red ball?'
-\item A `switch' utterance, to let the user switch place of two objects while the rest of the world remains the same
-\item Find the shortest/best solution by some measure
-\item Implement negation for objects, eg. `The non-white ball', and for relations, eg. `A ball which is not on the floor'.
-\item Support for the different quantifiers, `a', `any', `the', `all'.
+\item Ambiguity resolution by listing possible different objects, eg. ``You could mean the Yellow Box or the Red Box'', if the user wanted to pick ``the large box'' although there were two of them.
+\item Find the shortest solution, measured by the number of pick and drops. This is inherent to the A* algorithm that we are using.
+\item Support for differentiating between quantifiers. `a' and `any' means the same, but `the' requires the specification to refer to a single object, or we output an ambiguity error.
 \end{itemize}
 
 \section*{Final thoughts}
