@@ -1,25 +1,27 @@
 \section*{Contributions}
 \subsection*{Andreas Arvidsson}
-Most of my work has gone into writing the Interpreter and functions related to the interpretation process.
-A huge chunk of this work was focused on writing search functions for the objects (which took a long time to get right) and writing unit tests for every helper function in the interpreter.
-The searching functions were relatively straightforward to both implement and write tests for (as mentioned in the report).
-I managed to discover some bugs in the development doing this, though, so it was probably worth it.
+My main contribution to the project has been to write the interpreter and functions related to the interpretation process.
+A huge chunk of this work was focused especially on writing search functions for the objects (which took a longer time to get right than expected) and writing unit tests for every helper function in the interpreter.
+Both were otherwise pretty straight forward to implement.
+I managed to discover some bugs in the development doing this, though, so it was probably worth it. I could probably have started writing the tests sooner, which is a common good practice anyways.
 \newline
 \newline
-I also worked along Johan and Sebastian to implement the Ambiguity Resolver.
-This implementation happened late in the development process, so it forced the group to rethink the goal representation a bit. Specifically, we needed to include the quantifiers in the goals, in order to separate "the" and "any" in the ambiguity resolver.
+I also worked along Johan and Sebastian to implement the ambiguity resolver.
+This implementation happened late in the development process, so it forced the group to rethink the goal representation a bit.
+Specifically, we needed to include the quantifiers in the goals, in order to separate "the" and "any" in the ambiguity resolver.
+It was actually completed in a day, but it's not covered by the unit tests due to time limitations.
 \newline
 \newline
-Furthermore, I participed in the group meetings, development sessions and discussion like any good boy would do (except a small period when I was sick), so I have a good grasp on the project as a whole.
+Furthermore, I participed in the group meetings, development sessions and discussion like any good boy would do (except a small period when I was sick due to being too beautiful), so I have a good grasp on the project as a whole.
 \newline
 \newline
-Finally, I've written the whole Interpreter section of this report, the Introdoction section, roughly half of the Ambiguity Resolver section, some touch ups on the report as a whole, and last but not lest - this whole contribution snippet. Yey!
+Finally, I've written the whole interpreter section of this report, the introduction section, roughly half of the ambiguity resolver section, some touch ups on the report as a whole, and last but not lest - this whole contribution snippet. Yey!
 
 \subsection*{Sebastian Lagerman}
-Together with Robin we created the first draft of the report for the first deadline.
+I have, together with Robin, created the very first draft of the report for the first deadline.
 \newline
 \newline
-I created tests for the validation function which checks the laws of physics.
+I created some tests for the validation function, which checks that the laws of physics are not violated in the planner (and ambiguity resolver).
 \newline
 \newline
 In the introduction of this report I wrote how we decided to interpret the relations which the robot can use.
@@ -27,13 +29,12 @@ I was part of writing the ambiguity resolver in this report.
 After which I went into details on how the relations heuristics were created and what calculations they perform.
 \newline
 \newline
-In the code I focued mostly on the planner, in which I wrote the check function.
-The check function is used in the A* algorithm to check if a goal is satisfied.
-I also spent most of my time together with the help of johan to create the heuristics function.
-Which also was used by the A* algorithm to calculate how maney steps it could be until it reaches it goal.
+My main contribution to the development of the application is the code I wrote for the the planner - more specifically the check function.
+This function is used in the A* algorithm to check if a goal is satisfied.
+I also spent a large chunk of my time together with the help of Johan to create the heuristics function, which also was used by the A* algorithm to calculate how maney steps it could be until it reaches it goal.
 This is what took most of my time since I wanted a solid lower bound.
-Together with johan and andreas did we create the ambiguity resolver.
-I've gone through the code and cleaned up.
+Together with Johan and Andreas did we create the ambiguity resolver.
+Other than that, I've gone through the code and cleaned it up and moved some stuff around.
 
 
 \subsection*{Johan Swetz\'en}
