@@ -5,8 +5,8 @@ import Control.Monad.Error
 import Control.Monad.Identity
 import Control.Monad.Reader (ReaderT, runReaderT, ask)
 import Data.Either
-import Data.Maybe
 import Data.Map ((!))
+import Data.Maybe
 import qualified Data.Map as M
 
 import Shrdlite.Common as Common
@@ -44,7 +44,7 @@ isEntityError _               = False
 -- | Interprets all the provided commands in the given state.
 interpretAll :: State -> [Command] -> Either InterpretationError [[Goal]]
 interpretAll state cmds = Right validResults
-  where results = map (interpret state) cmds
+  where results      = map (interpret state) cmds
         validResults = rights results
 
 -- | Converts a parse tree into a PDDL representation of the final
@@ -62,10 +62,11 @@ interpret' (Move ent loc) = moveEntity ent (Just loc)
 takeEntity :: Entity -> Interpretation [Goal]
 takeEntity ent =
   case ent of
-    Floor                    -> throwError $ EntityError "Cannot take floor, ye rascal!"
+    Floor                    -> throwError $
+                                  EntityError "Cannot take floor, ye rascal!"
     BasicEntity q obj        -> searchObjects obj q Nothing >>= makeGoal q
     RelativeEntity q obj loc -> searchObjects obj q (Just loc) >>= makeGoal q
-  where makeGoal q found = return $ map (\(i,_) -> TakeGoal (Obj q i)) found
+  where makeGoal q found = return $ map (\(i, _) -> TakeGoal (Obj q i)) found
 
 -- | Generates a list of MoveGoals with the provided Location, using the
 -- currently held item as the entity to move.
@@ -74,10 +75,12 @@ dropAtLocation (Relative rel ent) = do
   state <- ask
   let hold = fromJust $ holding state
   case ent of
-    Floor                    -> return [MoveGoal rel (Obj The hold) Flr] -- Assuming unique holding, so "The" quantifier
+    -- Assuming unique holding, so "The" quantifier
+    Floor                    -> return [MoveGoal rel (Obj The hold) Flr]
     BasicEntity q obj        -> searchObjects obj q Nothing    >>= makeGoal q hold
     RelativeEntity q obj loc -> searchObjects obj q (Just loc) >>= makeGoal q hold
-  where makeGoal q hold found = return $ map (\(i,_) -> MoveGoal rel (Obj q hold) (Obj q i)) found
+  where makeGoal q hold found = return $
+          map (\(i, _) -> MoveGoal rel (Obj q hold) (Obj q i)) found
 
 -- | Generates a list of MoveGoals with the provided Entity and Location.
 moveEntity :: Entity -> Maybe Location -> Interpretation [Goal]
@@ -85,21 +88,26 @@ moveEntity ent (Just (Relative rel ent2)) = do
   movingEntities <- findEntity ent
   let movQ = getQuantifier ent
   case ent2 of
-    Floor -> return $ map (\movingEntity -> MoveGoal rel (Obj movQ movingEntity) Flr) movingEntities
-    BasicEntity relQ obj -> searchObjects obj relQ Nothing >>= makeGoal movQ relQ movingEntities
-    RelativeEntity relQ obj loc -> searchObjects obj relQ (Just loc) >>= makeGoal movQ relQ movingEntities
+    Floor -> return $
+      map (\me -> MoveGoal rel (Obj movQ me) Flr) movingEntities
+    BasicEntity relQ obj -> searchObjects obj relQ Nothing
+                        >>= makeGoal movQ relQ movingEntities
+    RelativeEntity relQ obj loc -> searchObjects obj relQ (Just loc)
+                               >>= makeGoal movQ relQ movingEntities
   where makeGoal movQ relQ movingEntities found =
           if null found
             then throwError $ EntityError "No matching entities."
-            else return $ concatMap (\movingEntity -> map (\(i,_) ->
-                MoveGoal rel (Obj movQ movingEntity) (Obj relQ i)) found) movingEntities
+            else return $ concatMap (\me -> map (\(i, _) ->
+                MoveGoal rel (Obj movQ me) (Obj relQ i)) found) movingEntities
 
 -- | Searches the world state after objects matching the provided quantifier and
 -- location.
-searchObjects :: Object -> Quantifier -> Maybe Location -> Interpretation [(Id, Object)]
+searchObjects :: Object -> Quantifier -> Maybe Location
+              -> Interpretation [(Id,  Object)]
 searchObjects obj quant mloc = do
   state <- ask
-  let foundObjects = filter (`exists` state) . filter isMatching $ M.assocs (objects state)
+  let foundObjects = filter (`exists` state) . filter isMatching
+                                                    $ M.assocs (objects state)
   case mloc of
     Nothing ->
       case quant of
@@ -108,12 +116,12 @@ searchObjects obj quant mloc = do
     Just loc ->
       case quant of
         All -> return foundObjects -- TODO
-        _   -> filterM (\(i,o) -> locationHolds (i,o) loc) foundObjects
+        _   -> filterM (\(i, o) -> locationHolds (i, o) loc) foundObjects
   where
     ids state = case holding state of
-            Nothing      -> concat $ world state
-            Just holdId  -> holdId : concat (world state)
-    exists (i,_) state    = i `elem` ids state
+                  Nothing      -> concat $ world state
+                  Just holdId  -> holdId : concat (world state)
+    exists (i, _) state    = i `elem` ids state
     isMatching (_, o) = obj == o
 
 -- | Checks if a location holds for an object in the world.
@@ -133,30 +141,30 @@ locationHolds (ide, _) (Relative rel ent) = do
         Ontop   -> allC [sameColumn, ontop] ide entityIds
         Under   -> allC [sameColumn, under] ide entityIds
         Inside  -> allC [sameColumn, inside] ide entityIds
-
-  where anyValid is = liftM or is
-        allValid is = liftM and is
-        allC :: [(Id -> Id -> Interpretation Bool)] -> Id -> [Id] -> Interpretation [Bool]
-        allC fs i1 is = sequence $ map (\i2 -> allValid $ sequence $ map (\f -> f i1 i2) fs) is
-        anyC fs i1 is = sequence $ map (\i2 -> anyValid $ sequence $ map (\f -> f i1 i2) fs) is
+  where
+    anyValid = liftM or
+    allValid = liftM and
+    allC :: [Id -> Id -> Interpretation Bool] -> Id -> [Id] -> Interpretation [Bool]
+    allC fs i1 = mapM (\i2 -> allValid $ mapM (\f -> f i1 i2) fs)
+    anyC fs i1 = mapM (\i2 -> anyValid $ mapM (\f -> f i1 i2) fs)
 
 -- | Finds the column index of the object whose Id matches the provided one.
 findObjColumn :: Id -> Interpretation Int
 findObjColumn i = do
   state <- ask
   case findObjPos i (world state) of
-    Nothing    -> throwError $ EntityError $
-                    "Could not find column for entity with id" ++ show i
-    Just (c,_) -> return c
+    Nothing     -> throwError $ EntityError $
+                     "Could not find column for entity with id" ++ show i
+    Just (c, _) -> return c
 
 -- | Finds the height index of the object whose Id matches the provided one.
 findObjHeight :: Id -> Interpretation Int
 findObjHeight i = do
   state <- ask
   case findObjPos i (world state) of
-    Nothing    -> throwError $ EntityError $
-                    "Could not find column for entity with id" ++ show i
-    Just (_,h) -> return h
+    Nothing     -> throwError $ EntityError $
+                     "Could not find column for entity with id" ++ show i
+    Just (_, h) -> return h
 
 -- | Checks if two objects are in the same column.
 sameColumn :: Id -> Id -> Interpretation Bool
@@ -185,11 +193,13 @@ under i1 i2 = liftM2 (<) (findObjHeight i1) (findObjHeight i2)
 
 -- | Checks if the first object is to the left of the second.
 leftof :: Id -> Id -> Interpretation Bool
-leftof i1 i2 = liftM2 (\a b -> a - b == (-1)) (findObjColumn i1) (findObjColumn i2)
+leftof i1 i2 =
+  liftM2 (\a b -> a - b == (-1)) (findObjColumn i1) (findObjColumn i2)
 
 -- | Checks if the first object is to the right of the second.
 rightof :: Id -> Id -> Interpretation Bool
-rightof i1 i2 = liftM2 (\a b -> a - b == 1) (findObjColumn i1) (findObjColumn i2)
+rightof i1 i2 =
+  liftM2 (\a b -> a - b == 1) (findObjColumn i1) (findObjColumn i2)
 
 -- | Finds a single entity
 findSingleEntity :: Entity -> Interpretation Id
@@ -213,6 +223,6 @@ column state ident = fmap (\pos -> world state !! fst pos) i
 
 -- | Finds the quantifier from an entity
 getQuantifier :: Entity -> Quantifier
-getQuantifier Floor                   = The
-getQuantifier (BasicEntity q _)       = q
-getQuantifier (RelativeEntity q _ _)  = q
+getQuantifier Floor                  = The
+getQuantifier (BasicEntity q _)      = q
+getQuantifier (RelativeEntity q _ _) = q

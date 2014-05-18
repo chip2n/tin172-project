@@ -30,7 +30,9 @@ data Command = Take Entity | Put Location | Move Entity Location
 data Location = Relative Relation Entity
                 deriving (Eq, Ord, Show)
 
-data Entity = Floor | BasicEntity Quantifier Object | RelativeEntity Quantifier Object Location
+data Entity = Floor
+            | BasicEntity Quantifier Object
+            | RelativeEntity Quantifier Object Location
               deriving (Eq, Ord, Show)
 
 data Object = Object Size Color Form
@@ -98,55 +100,57 @@ entity = Floor <$ theFloor
          <|>
          numberAgreement (liftA2 BasicEntity <$> quantifier <*> object)
          <|>
-         numberAgreement (liftA3 RelativeEntity <$> quantifier <*> object <*> relative_clause)
+         numberAgreement (liftA3 RelativeEntity
+           <$> quantifier <*> object <*> relative_clause)
     where
       relative_clause n = thatIs n *> location
 
 object :: Number -> SParser Object
-object n = Object <$> (size <|> pure AnySize) <*> (color <|> pure AnyColor) <*> form n
-           <|>
-           flip Object <$> color <*> size <*> form n
+object n =
+  Object <$> (size <|> pure AnySize) <*> (color <|> pure AnyColor) <*> form n
+  <|>
+  flip Object <$> color <*> size <*> form n
 
 -- Lexical rules
 
 quantifier :: Number -> SParser Quantifier
-quantifier Sg = lexicon [(The, ["the"]),
-                         (Any, ["a", "an", "any"]),
-                         (All, ["every"])]
+quantifier Sg = lexicon [(The, ["the"])
+                        ,(Any, ["a", "an", "any"])
+                        ,(All, ["every"])]
 quantifier Pl = lexicon [(All, ["all"])]
 
 relation :: SParser Relation
-relation = lexicon [(Beside,  ["beside"]),
-                  (Leftof,  ["left of", "to the left of"]),
-                  (Rightof, ["right of", "to the right of"]),
-                  (Above,   ["above"]),
-                  (Ontop,   ["on top of", "on"]),
-                  (Under,   ["under"]),
-                  (Inside,  ["inside", "in", "into"])]
+relation = lexicon [(Beside,  ["beside"])
+                   ,(Leftof,  ["left of", "to the left of"])
+                   ,(Rightof, ["right of", "to the right of"])
+                   ,(Above,   ["above"])
+                   ,(Ontop,   ["on top of", "on"])
+                   ,(Under,   ["under"])
+                   ,(Inside,  ["inside", "in", "into"])]
 
 -- | Parses the size from a string
 size :: SParser Size
-size = lexicon [(Small,  ["small", "tiny"]),
-                (Large,  ["large", "big"])]
+size = lexicon [(Small,  ["small", "tiny"])
+               ,(Large,  ["large", "big"])]
 
 -- | Parses the colour from a string
 color :: SParser Color
-color = lexicon [(Black,  ["black"]),
-                 (White,  ["white"]),
-                 (Blue,   ["blue"]),
-                 (Green,  ["green"]),
-                 (Yellow, ["yellow"]),
-                 (Red,    ["red"])]
+color = lexicon [(Black,  ["black"])
+                ,(White,  ["white"])
+                ,(Blue,   ["blue"])
+                ,(Green,  ["green"])
+                ,(Yellow, ["yellow"])
+                ,(Red,    ["red"])]
 
 -- | Parses the form from a string
 form :: Number -> SParser Form
-form n = lexicon [(AnyForm, [regNoun n "object", regNoun n "thing", regNoun n "form"]),
-                  (Brick,   [regNoun n "brick"]),
-                  (Plank,   [regNoun n "plank"]),
-                  (Ball,    [regNoun n "ball"]),
-                  (Pyramid, [regNoun n "pyramid"]),
-                  (Box,     [mkNoun  n "box" "boxes"]),
-                  (Table,   [regNoun n "table"])]
+form n = lexicon [(AnyForm, [regNoun n "object", regNoun n "thing", regNoun n "form"])
+                 ,(Brick,   [regNoun n "brick"])
+                 ,(Plank,   [regNoun n "plank"])
+                 ,(Ball,    [regNoun n "ball"])
+                 ,(Pyramid, [regNoun n "pyramid"])
+                 ,(Box,     [mkNoun  n "box" "boxes"])
+                 ,(Table,   [regNoun n "table"])]
 
 -- Lexicon
 
