@@ -34,22 +34,22 @@ jsonMain jsinput = makeObj result
     goals'    = case goals of -- validate goals
                   Left err -> error $ show err -- TODO: Send control question
                   Right g  -> [g]
-    plan = if length goals' > 0
+    plan = if not (null goals')
              then Planner.solve wrld hldng obj goals' :: Maybe Plan
              else Nothing
 
     output
-      | null trees          = "Parse error!"
-      | length goals' >= 2  = "Ambiguity error!" -- just OR them
-      | null goals'         = "Interpretation error!"
-      | isNothing plan      = "Planning error!"
-      | fromJust plan == [] = "Way ahead of you!"
-      | otherwise           = "Much wow!"
+      | null trees           = "Parse error!"
+      | length goals' >= 2   = "Ambiguity error!" -- just OR them
+      | null goals'          = "Interpretation error!"
+      | isNothing plan       = "Planning error!"
+      | null (fromJust plan) = "Way ahead of you!"
+      | otherwise            = "Much wow!"
 
     result = [ ("utterance",    showJSON utterance)
              , ("trees",        showJSON (map show trees))
              , ("goals",        showJSON $ map show goals')
              , ("plan",         showJSON $ fromMaybe [] plan)
              , ("output",       showJSON output)
-             , ("receivedJSON", showJSON $ jsinput)
+             , ("receivedJSON", showJSON jsinput)
              ]
