@@ -23,10 +23,10 @@ jsonMain :: JSObject JSValue -> JSValue
 jsonMain jsinput = makeObj result
   where
     utterance = ok      (valFromObj "utterance" jsinput)         :: Utterance
-    world     = ok      (valFromObj "world"     jsinput)         :: World
-    holding   = maybeOk (valFromObj "holding"   jsinput)         :: Maybe Id
-    objects   = parseObjects $ ok (valFromObj "objects" jsinput) :: Objects
-    state     = State world holding objects
+    wrld      = ok      (valFromObj "world"     jsinput)         :: World
+    hldng     = maybeOk (valFromObj "holding"   jsinput)         :: Maybe Id
+    obj       = parseObjects $ ok (valFromObj "objects" jsinput) :: Objects
+    state     = State wrld hldng obj    
     trees     = parse command utterance :: [Command]
     goals     = case interpretAll state trees of
                   Left r   -> error $ "Interpretation error: " ++ show r
@@ -35,7 +35,7 @@ jsonMain jsinput = makeObj result
                   Left err -> error $ show err -- TODO: Send control question
                   Right g  -> [g]
     plan = if length goals' > 0
-             then Planner.solve world holding objects goals' :: Maybe Plan
+             then Planner.solve wrld hldng obj goals' :: Maybe Plan
              else Nothing
 
     output
