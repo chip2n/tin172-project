@@ -29,7 +29,6 @@ token t = Parser (\ts -> case ts of
                            _                -> [])
 
 -- Convenience parsers
-
 anyof :: [Parser t a] -> Parser t a
 anyof = F.asum
 

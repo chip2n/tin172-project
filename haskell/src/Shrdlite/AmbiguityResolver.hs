@@ -56,8 +56,6 @@ pickOne [] = throwError $ OtherError "No valid goal."
 pickOne [g] = return g
 pickOne gs = throwError $ AmbiguityError gs "INSERT AMBIGUITY QUESTION HERE" -- TODO
 
-
-
 -- | Gets all the possible goals
 validGoals :: [Goal] -> Ambiguity [Goal]
 validGoals = filterM possibleGoal
