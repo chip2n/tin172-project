@@ -5,37 +5,34 @@
 %    how goals are seperated)
 We have been working on an artificial intelligence project which has resulted in an interpreter, ambiguity resolver and planner for an organizing robot simulator.
 The robot can react to user commands and move objects in the world accordingly.
-In this report, we will describe some implementation details of the various parts of the application itself, as well as our experiences and dilemmas.
+In this report, we will describe some implementation details of the various parts of the application itself, as well as our experiences with the project and problems we encountered during development.
 
 \subsection*{Workflow}
 The group decided to work with an agile workflow, with regular meetings and development sessions.
-With this kind of workflow, we had the ability to handle one utterance at a time.
-To avoid as much overhead of working multiple persons on a single code base, we decided to use git for version control.
+With this kind of workflow, we had the ability to focus on one utterance at a time.
+To avoid as much overhead of working multiple persons on a single code base as possible, we decided to use git for version control.
 This helped the group to work in different part of the code without conflicts.
 
-We did not, however, use a Scrum tool like PivotalTracker. If we would have done this, the project might have finished quicker - but unfortunately we realized this a bit too late.
-Instead, we mainly used github's issue tracking system for long-lasting bugs (which there weren't many of).
-
 \subsection*{Notation}
-In order to simplify the work of both us and the reader, we will use a notation for describing function types which is inspired by the native Haskell notation.
+In order to simplify the work for both us and the reader, we will use a notation for describing function types which is inspired by the notation used in Haskell.
 In case the reader is not familiar with this notation - here's an example:
 
 \begin{lstlisting}
 funName :: ArgType $\rightarrow$ ArgType2 $\rightarrow$ ReturnType
 \end{lstlisting}
 
-The notation starts with the function name ("funName"), which is separated from the rest of the type by a double colon ("::").
-Then, the input argument types are separated by arrows ("$\rightarrow$") - with the exception of the last variable, which is always the return type.
+The notation starts with the function name (``funName''), which is separated from the rest of the type by a double colon (``::'').
+Then, the input argument types are separated by arrows (``$\rightarrow$'') - with the exception of the last variable, which is always the return type.
 So, to write a function which takes a list of integers and returns a bool, we could write:
 
 \begin{lstlisting}
 foo :: [Int] $\rightarrow$ Bool
 \end{lstlisting}
 
-It is a very concise way to write function types, which is why we've chose to use it. However, this notation will be used sparingly throughout the report to show the most important functions in the various parts of the application.
+This is a very concise way to write function types, which is why we've chose to use it. However, this notation will be used sparingly throughout the report to show the most important functions in the various parts of the application.
 
 \subsection*{Relations}
-There are a few object relations which the user can provide via the utterance (or command). These are "beside", "left of", "right of", "above", on top", "under" and "inside". To avoid confusion, we will interpret these in the following way:
+There are a few object relations which the user can provide via the utterance (or command). These are ``beside'', ``left of'', ``right of'', ``above'', ``on top'', ``under'' and ``inside''. To avoid confusion, we will interpret these in the following way:
 
 \begin{description}
   \item[Beside] The assumption here was that the two objects should be placed in
@@ -54,3 +51,8 @@ There are a few object relations which the user can provide via the utterance (o
   \item[Inside] We assumed this relation could only be applied to boxes, but
   otherwise it follows the \verb|Ontop| relation.
 \end{description}
+
+\subsection*{Goals}
+There are two goals which cover all basic utterances that are valid. First, we have a goal we chose to call a TakeGoal. This goal initially just contained the object Id that was to be picked up. However, when doing the Ambiguity Resolver we were forced to add a quantifier taken from the utterance as well. This is necessary to differentiate the goals based on the quantifier the user chose.
+
+The second type of goal is the MoveGoal. This contains two object ids (and their quantifiers), and also a relation between them. Using these, we can both handle user movement commands, but also simple put commands (by creating a MoveGoal with the currently held object as the first id).
