@@ -162,7 +162,7 @@ validateAllLaws relation o1 o2 =
     Beside  -> True
     Leftof  -> True
     Rightof -> True
-    Above   -> getSize o1 < getSize o2
-    Ontop   -> validate o1 o2 && getForm o2 /= Box
-    Under   -> getSize o1 > getSize o2
-    Inside  -> validate o1 o2 && getForm o2 == Box
+    Above   -> getForm o2 /= Ball && getSize o1 <= getSize o2
+    Ontop   -> getForm o2 /= Box && validate o1 o2
+    Under   -> getForm o1 /= Ball && getSize o1 >= getSize o2
+    Inside  -> getForm o2 == Box && validate o1 o2

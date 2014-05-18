@@ -6,7 +6,8 @@ The searching functions were relatively straightforward to both implement and wr
 I managed to discover some bugs in the development doing this, though, so it was probably worth it.
 \newline
 \newline
-I also worked along Johan and Sebastian to implement the Ambiguity Resolver. This implementation happened late in the development process, so it forced the group to rethink the goal representation a bit. Specifically, we needed to include the quantifiers in the goals, in order to separate "the" and "any" in the ambiguity resolver.
+I also worked along Johan and Sebastian to implement the Ambiguity Resolver.
+This implementation happened late in the development process, so it forced the group to rethink the goal representation a bit. Specifically, we needed to include the quantifiers in the goals, in order to separate "the" and "any" in the ambiguity resolver.
 \newline
 \newline
 Furthermore, I participed in the group meetings, development sessions and discussion like any good boy would do (except a small period when I was sick), so I have a good grasp on the project as a whole.
@@ -18,13 +19,22 @@ Finally, I've written the whole Interpreter section of this report, the Introdoc
 Together with Robin we created the first draft of the report for the first deadline.
 \newline
 \newline
-I created test for the validation function which checks the laws of physics.
+I created tests for the validation function which checks the laws of physics.
 \newline
 \newline
-In this report I wrote the introduction, ambiguity resolver and the heuristics.
+In the introduction of this report I wrote how we decided to interpret the relations which the robot can use.
+I was part of writing the ambiguity resolver in this report.
+After which I went into details on how the relations heuristics were created and what calculations they perform.
 \newline
 \newline
-As of the code I also wrote the checks and heuristics for the A* function and was part of the creation of the ambiguity resolver
+In the code I focued mostly on the planner, in which I wrote the check function.
+The check function is used in the A* algorithm to check if a goal is satisfied.
+I also spent most of my time together with the help of johan to create the heuristics function.
+Which also was used by the A* algorithm to calculate how maney steps it could be until it reaches it goal.
+This is what took most of my time since I wanted a solid lower bound.
+Together with johan and andreas did we create the ambiguity resolver.
+I've gone through the code and cleaned up.
+
 
 \subsection*{Johan Swetz\'en}
 \subsection*{Robin Touche}
