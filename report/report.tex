@@ -23,13 +23,13 @@
     keywordstyle=\color{OliveGreen},        % Keywords font ('*' = uppercase)
     commentstyle=\color{gray},              % Comments font
     backgroundcolor=\color{lightlightgray}, % Choose background color
-    frame=single,
     tabsize=2,                              % Default tab size
     captionpos=b,                           % Caption-position = bottom
     breaklines=true,                        % Automatic line breaking?
     breakatwhitespace=false,                % Automatic breaks only at whitespace?
     showspaces=false,                       % Dont make spaces visible
     showtabs=false,                         % Dont make tabls visible
+    frame=single,
     framesep=3pt,
     mathescape=true,
     xleftmargin=3pt,
@@ -51,28 +51,6 @@
 \begin{document}
 \maketitle
 
-% 1. Introduction
-% - Foundation of the world
-%   (how spatial relations are interpreted
-%    how goals are seperated)
-
-% 2. Interpretation
-% - How are parse trees connected to PDDLs
-%   how objects identified in the world
-%   what happens when there are multiple objects matching the description?
-%   Quantifier handling: the/any/all.
-
-% 3. Ambiguity resolution
-% - How are multiple PDDL goals handled? pick first/random? clarification
-%   question? return ambiguity error.
-
-% 4. Planning
-% - Desception of search algorithm
-% - Heuristics used
-% - Cost function (what is being minimized? - arm movement, number of steps
-% - Average call complexity (lower & upper bounds)
-% - data structures used to represent world, goal search space
-
 % 5. Miscellaneous uretionalistics(?)
 
 % 6. Literal use survey
@@ -90,6 +68,10 @@
 % 8 pages + appendix/references
 
 \section*{Introduction}
+% 1. Introduction
+% - Foundation of the world
+%   (how spatial relations are interpreted
+%    how goals are seperated)
 We have been working on an artificial intelligence project which has resulted in an interpreter, ambiguity resolver and planner for an organizing robot simulator.
 The robot can react to user commands and move objects in the world accordingly.
 In this report, we will describe some implementation details of the various parts of the application itself, as well as our experiences and dilemmas.

@@ -1,4 +1,11 @@
 \section*{Interpreter}
+% 2. Interpretation
+% - How are parse trees connected to PDDLs
+%   how objects identified in the world
+%   what happens when there are multiple objects matching the description?
+%   Quantifier handling: the/any/all.
+
+
 The interpreter is meant to be working with the world to find objects that match the criteria such that the planner can work with the objects id and not the objects description.
 Keeping this in mind, we realized that we needed a way to find object based on their description.
 This is the main focus on the interpreter. A few ambiguity errors can occur here - mainly based on which quantifier is used.
