@@ -16,7 +16,21 @@ The return type of our ambiguity resolver is either an error (in case of ambigui
 Once we have received the goals from the input of the main ambiguity resolver function, we need to check all of them if the laws of physics will apply on all of them.
 The check is fairly simple.
 We iterate over the list of goals, check which type of goal it is (move or take goals), and process them each to remove any impossible goals.
-Notable examples that are being removed in this stage are if the user decides to pick up the floor, or if the user tries to place a brick on top of a ball (which violates the physical laws.
+Notable examples that are being removed in this stage are if the user tries to place a brick on top of a ball (which violates the physical laws) or the following more complicated example.
+If the world contains three objects: a large ball, a small ball and a small box, the utterance ``put the ball in the box'' could be considered ambiguous.
+However, since the large ball cannot be placed in the small box, this invalid goal is removed and the ambiguity is resolved so that only one goal is left.
 
 \subsection*{Quantifier check}
-After which we check if the quantifiers makes any of the goals obsolete. %TODO go inte more detail
+The ambiguity resolver also deals with ambiguities arising from the use of quantifiers.
+If we get an utterance specifying ``the ball'', we make sure that only one ball (for which the goal is physically valid) is found in the world.
+Or if the user writes ``put the ball in the box'', both ``the ball'' and ``the box'' needs to be unambiguous.
+Variations on this, like ``put the ball in a box'', only require one of the objects to be specific whereas the other can match any number of unique objects.
+
+In the case of an ambiguity we tell the user what different objects could match the utterance, starting with the first object description.
+So if ``put the ball in the box'' is ambiguous in both the ball and the box, the user will be told about the ball ambiguity first.
+If the next utterance then has specified this, for example ``put the small ball in the box'', the second ambiguity is handled.
+We have chosen to do it this way since any combination of balls and boxes could lead to quite a large response.
+
+If the quantifiers do not lead to any ambiguities, we know that any of the remaining goals are valid, so the first one is picked.
+An improvement of this would be to let the planner choose among the goals to find the simplest one, but this is not done at the moment.
+
