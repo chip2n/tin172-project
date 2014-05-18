@@ -84,7 +84,13 @@ above it.
 \end{description}
 
 \subsection*{A*}
-Our implementation of the AStar algorithm.
+The planner uses our own implementation of the A* algorithm which is based on the description by~\cite{apath}.
+It takes as input a graph, a heuristics function, a goal-checking function and a starting node.
+To represent the nodes, we have chosen to use the world (a list of lists of id strings) and the object that is currently being held.
+Our graph is described as a function that takes a node and returns the possible nodes following it, so we do not have to hold an infinite graph in memory.
+We use a priority search queue for keeping track of the ``open'' nodes, the ones we have yet to visit, and their estimated cost, i.e.\ path cost + heuristic.
+At all times we also save the visited nodes, the cheapest path cost for getting to any node and the parent of each node.
+Iterating through the open queue, taking the cheapest node every time, we will eventually end up with a solution that is optimal with respect to the number of pick and drop actions required.
 
 %The planner is basically untouched as of yet. We have been working mostly on
 %the interpreter and ambiguity resolver. It can currently only partially execute
