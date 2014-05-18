@@ -16,6 +16,10 @@ import Shrdlite.Interpreter as Interpreter
 import Shrdlite.AmbiguityResolver as Resolver
 import Shrdlite.Planner as Planner
 
+-- | Reads from standard input a JSON string, decodes it and parses it into
+-- corresponding data structure. After this is done, it runs the interpreter,
+-- ambiguity resolver and planner on these structures, and finally writes the
+-- JSON output to standard output.
 main :: IO ()
 main = getContents >>= putStrLn . encode . jsonMain . ok . decode
 
