@@ -9,7 +9,7 @@ module Shrdlite.Grammar (
   , Size       (..)
   , Color      (..)
   , Form       (..)
-  , SParser    (..)
+  , SParser
 
   -- * Functions
   , size
@@ -18,7 +18,7 @@ module Shrdlite.Grammar (
   ) where
 
 import Shrdlite.CombinatorParser
-import Text.JSON
+import Text.JSON()
 
 type SParser = Parser String
 
