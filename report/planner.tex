@@ -5,9 +5,16 @@
 % - Cost function (what is being minimized? - arm movement, number of steps
 % - Average call complexity (lower & upper bounds)
 % - data structures used to represent world, goal search space
-The planner takes the goals that the interpreter and ambiguity resolver have created from an utterance and finds a way to actually fullfill those goals. The planner uses the A* algorithm to explore possible solutions and shortest solution (smallest number of take/drop steps) based on heuristics as explained below in more detail.
+The planner takes the goals that the interpreter and ambiguity resolver have
+created from an utterance and finds a way to actually fullfill those goals. The
+planner uses the A* algorithm to explore possible solutions and shortest
+solution (smallest number of take/drop steps) based on heuristics as explained
+below in more detail.
 
-The planner makes sure that only valid solutions (that upholds the given physical laws) will be considered. However, the algorithm only validates the possible steps taken and avoids impossible states, which means that it assumes the initial world is valid as well. If not it cannot reach a conclusion.
+The planner makes sure that only valid solutions (that upholds the given
+physical laws) will be considered. However, the algorithm only validates the
+possible steps taken and avoids impossible states, which means that it assumes
+the initial world is valid as well. If not it cannot reach a conclusion.
 
 \subsection*{Heuristics}
 We started out by just implementing the ``take'' utterance, so our heuristics
