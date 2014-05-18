@@ -22,18 +22,18 @@ unInterpret state a = runIdentity $ runErrorT $ runReaderT a state
 -- | Data structure for different errors that can show up during the
 -- interpretation process.
 data InterpretationError = EntityError String
-                         | AmbiguityError [Id]
-                         | OtherError String
+                         | InterpretationAmbiguityError [Id]
+                         | InterpretationOtherError String
                          deriving (Show, Eq)
 
 -- | For the ErrorT monad.
 instance Error InterpretationError where
-    noMsg  = OtherError ""
-    strMsg = OtherError
+    noMsg  = InterpretationOtherError ""
+    strMsg = InterpretationOtherError
 
--- | Checks wether the provided error is an AmbiguityError.
+-- | Checks wether the provided error is an InterpretationAmbiguityError.
 isAmbiguityError :: InterpretationError -> Bool
-isAmbiguityError (AmbiguityError _) = True
+isAmbiguityError (InterpretationAmbiguityError _) = True
 isAmbiguityError _                  = False
 
 -- | Checks wether the provided error is an EntityError.
