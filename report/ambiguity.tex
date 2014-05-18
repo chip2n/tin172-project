@@ -3,13 +3,14 @@
 %   question? return ambiguity error.
 
 \section*{Ambiguity resolver}
-The ambiguity resolver needs the state of the world and all the possible goals that could be interpreted from the input.
+In order to resolve any ambiguities from the output of the interpreter, the ambiguity resolver needs the state of the world and, of course, the list of goals themselves.
 The type of this function can therefore be written as:
 \begin{lstlisting}
 resolveAmbiguity :: State $\rightarrow$ [[Goal]] $\rightarrow$ Either AmbiguityError Goal
 \end{lstlisting}
 
-So, the return type of our ambiguity resolver is either an error (in case of ambiguities due to quantifiers or other reasons) or a single goal which will be sent to the planner.
+We have a list of lists of goals, since there will be one list of goal for each possible interpretation of the user utterance.
+The return type of our ambiguity resolver is either an error (in case of ambiguities due to quantifiers or other reasons) or a single goal which will be sent to the planner.
 
 \subsection*{Physical laws}
 Once we have received the goals from the input of the main ambiguity resolver function, we need to check all of them if the laws of physics will apply on all of them.
