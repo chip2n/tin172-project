@@ -8,7 +8,8 @@
 
 The interpreter is meant to be working with the world to find objects that match the criteria such that the planner can work with the objects id and not the objects description.
 Keeping this in mind, we realized that we needed a way to find object based on their description.
-This is the main focus on the interpreter. A few ambiguity errors can occur here - mainly based on which quantifier is used.
+This is the main focus on the interpreter.
+A few ambiguity errors can occur here - mainly based on which quantifier is used.
 This has to be included in the interpretation output, so that the ambiguity resolver can handle it.
 
 The implementation of the interpreter began by writing a suitable type for it.
@@ -26,28 +27,31 @@ interpretAll :: State $\rightarrow$ [Command] $\rightarrow$ Either Interpretatio
 
 We decided to make an internal monadic interface for the interpreter, which is why the return type looks a bit funky.
 This was partly because we didn't want to pass the world state around all helper functions, but also to be able to handle possible errors.
-So, if the interpreter can't, for example, find a certain entity matching the user command, we can return an error which can be used in other parts of the program to give the user a nice output.
+If the interpreter can't, for example, find a certain entity matching the user command, we can return an error which can be used in other parts of the program to give the user a nice output.
 
 \subsection*{State}
 The data type representing world state is, in our case, very simple.
 It contains the world obtained from the JSON parser, which is just a list of lists where each inner list represents a stack of object ids.
-The State data type also contains the object Id of the currently held object and, of course, a map for receiving object descriptions based on their object id. This is all we need for the interpreter and, as it turns out, also all we need for the Planner and Ambiguity Resolver.
+The State data type also contains the object Id of the currently held object and, of course, a map for receiving object descriptions based on their object id.
+This is all we need for the interpreter and, as it turns out, also all we need for the Planner and Ambiguity Resolver.
 
 \subsection*{Goal}
 The end goal of the interpreter is to convert the different user utterance interpretation (from the parser) to a list of different PDDL goals.
 In order to do this, we need to, as mentioned above, translate the object descriptions to their corresponding id.
 This is done by running the different search functions.
-When we receive the result from them, we just create the goals by checking location constraints etc for all the matching objects. The location checks could have been moved to the Ambiguity Resolver, but we decided against this since without it the interpreter becomes almost trivial to implement.
+When we receive the result from them, we just create the goals by checking location constraints etc for all the matching objects.
+The location checks could have been moved to the Ambiguity Resolver, but we decided against this since without it the interpreter becomes almost trivial to implement.
 
-An important addition that we did late in the project was to include the quantifiers in the goals, so that the ambiguity resolver knows how to handle quantity-based ambiguities. The plan was to handle this in the interpreter first, but we found that it was a bit clearer to move this to the Ambiguity Resolver because it seems to fit better there.
+An important addition that we did late in the project was to include the quantifiers in the goals, so that the ambiguity resolver knows how to handle quantity-based ambiguities.
+The plan was to handle this in the interpreter first, but we found that it was a bit clearer to move this to the Ambiguity Resolver because it seems to fit better there.
 
 \subsection*{Object search}
 The implementation of the interpreter started with the realization that we needed a way to find objects in the world based on their appearance.
-In order to do this, we started fleshing out simple search functions, so that we can construct PDDL goals that references object IDs as opposed to the object descriptions available from the user command.
+In order to do this, we started fleshing out simple search functions, so that we can construct PDDL goals that references object ids as opposed to the object descriptions available from the user command.
 The plan was that if we find multiple matching objects, we can either return one of them, or return an ambiguity error - depending on the user utterance.
 
 The function for searching for matching objects takes as input the world state (implicitly via the monadic interface), an object description, a quantifier (from the utterance) and an optional relative location.
-It returns a list of all the correctly matched items when successful - but of course there is a possibility of error here that we can easily express with the monadic interface.
+It returns a list of all the correctly matched items when successful, but of course there is a possibility of error here that we can easily express with the monadic interface.
 This function was relatively straightforward to implement, although it should be noted that a few bugs were discovered during the test writing.
 
 \subsection*{Error handling}
