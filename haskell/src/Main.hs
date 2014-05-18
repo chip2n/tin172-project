@@ -36,19 +36,31 @@ jsonMain jsinput = makeObj result
                   Left r   -> error $ "Interpretation error: " ++ show r
                   Right gs -> resolveAmbiguity state gs
     goals'    = case goals of -- validate goals
-                  Left err -> error $ show err -- TODO: Send control question
+                  Left _ -> []
                   Right g  -> [g]
     plan = if not (null goals')
              then Planner.solve wrld hldng obj goals' :: Maybe Plan
              else Nothing
 
     output
-      | null trees           = "Parse error!"
-      | length goals' >= 2   = "Ambiguity error!" -- just OR them
-      | null goals'          = "Interpretation error!"
-      | isNothing plan       = "Planning error!"
-      | null (fromJust plan) = "Way ahead of you!"
-      | otherwise            = "Much wow!"
+      | null trees            = "Parse error!"
+      | isLeft goals          = fromLeft ambiguityMsg goals
+      | length goals' >= 2    = "Ambiguity error!" -- just OR them
+      | null goals'           = "Interpretation error!"
+      | isNothing plan        = "Planning error!"
+      | null (fromJust plan)  = "Way ahead of you!"
+      | otherwise             = "Much wow!"
+
+    isLeft :: Either a b -> Bool
+    isLeft (Left _) = True
+    isLeft _ = False
+
+    fromLeft :: (a -> c) -> Either a b -> c
+    fromLeft f (Left x) = f x
+
+    ambiguityMsg :: AmbiguityError -> String
+    ambiguityMsg (AmbiguityError _ msg) = msg
+    ambiguityMsg (OtherError  msg) = msg
 
     result = [ ("utterance",    showJSON utterance)
              , ("trees",        showJSON (map show trees))
